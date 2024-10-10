@@ -100,7 +100,7 @@ namespace dotInstrukcijeBackend.Controllers
             return Ok(new
             {
                 success = true,
-                student = new StudentDTO(student.Id, student.Name, student.Surname, profilePhotoBase64String), // Prilagodite prema potrebama
+                student = new StudentDTO(student.Id, student.Name, student.Surname, profilePhotoBase64String), 
                 token,
                 message = "Login successful."
             });
