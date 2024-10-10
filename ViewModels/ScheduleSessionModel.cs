@@ -1,0 +1,16 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace dotInstrukcijeBackend.ViewModels
+{
+    public class ScheduleSessionModel
+    {
+        [Required]
+        public DateTime DateTime { get; set; }
+        
+        [Required]
+        public int ProfessorId { get; set; }
+
+        [Required]
+        public int SubjectId { get; set; }
+    }
+}
