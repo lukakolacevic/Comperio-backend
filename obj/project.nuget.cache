@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "AxfSCN+WXL4rZTbQp7TKfxtCX+rQrH0kZwtZLatvBaJh24vRQzj0qxpi+lgir51YVcuMDIm+j5dG+N7KKHLySA==",
+  "dgSpecHash": "eniM3pWmNctZl5kzQ0xtLuCyY8BigHQ6po37JAukhA7O5azy5oTVAdGhr3ghK27kC+vzLiZVB9oE58eWkEuZOA==",
   "success": true,
-  "projectFilePath": "C:\\Users\\lukak\\source\\repos\\dotInstrukcijeBackend\\dotInstrukcijeBackend.csproj",
+  "projectFilePath": "C:\\Users\\lukak\\OneDrive\\Radna površina\\dotInstrukcijeBackend\\dotInstrukcijeBackend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\lukak\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\lukak\\.nuget\\packages\\azure.identity\\1.11.3\\azure.identity.1.11.3.nupkg.sha512",

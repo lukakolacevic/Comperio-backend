@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("dotInstrukcijeBackend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b54b2a01c277afb59c2a57739b68fe9455b5471f")]
 [assembly: System.Reflection.AssemblyProductAttribute("dotInstrukcijeBackend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("dotInstrukcijeBackend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
