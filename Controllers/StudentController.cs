@@ -54,7 +54,7 @@ namespace dotInstrukcijeBackend.Controllers
                 return BadRequest(new { success = false, message = "Email is already in use." });
             }
 
-            //byte[] profilePictureSaved = await SaveProfilePicture(model.profilePicture); // Ensure model.profilePicture can be null
+            //byte[] profilePictureSaved = await SaveProfilePicture(model.profilePicture); 
 
             var student = new Student
             {
@@ -62,7 +62,7 @@ namespace dotInstrukcijeBackend.Controllers
                 Name = model.Name,
                 Surname = model.Surname,
                 Password = PasswordHasher.HashPassword(model.Password),
-                ProfilePicture = await ProfilePhotoSaver.SaveProfilePicture(model.ProfilePicture) // this will handle null appropriately
+                ProfilePicture = await ProfilePhotoSaver.SaveProfilePicture(model.ProfilePicture) 
             };
 
             await _studentRepository.AddStudentAsync(student);
