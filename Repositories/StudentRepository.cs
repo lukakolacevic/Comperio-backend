@@ -43,11 +43,12 @@ namespace dotInstrukcijeBackend.Repositories
 
         public async Task<bool> CanScheduleMoreSessionsAsync(int studentId)
         {
-            const string query = "SELECT COUNT(*) FROM session WHERE student_id = @StudentId";
+            const string query = @"SELECT COUNT(*) FROM session where student_id = @StudentId AND status = 'Pending' 
+                                    AND date_time > CURRENT_TIMESTAMP;";
 
             var numberOfSessions = await _connection.ExecuteScalarAsync<int>(query, new {StudentId = studentId});
 
-            return numberOfSessions < 3;
+            return numberOfSessions < 5;
         }
     }
 }
