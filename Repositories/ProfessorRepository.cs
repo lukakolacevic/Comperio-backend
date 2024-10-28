@@ -1,6 +1,8 @@
 ﻿using Dapper;
 using dotInstrukcijeBackend.Interfaces;
 using dotInstrukcijeBackend.Models;
+using Humanizer.Localisation.TimeToClockNotation;
+using Npgsql.Replication.PgOutput.Messages;
 using System.Data;
 
 namespace dotInstrukcijeBackend.Repositories
@@ -65,6 +67,61 @@ namespace dotInstrukcijeBackend.Repositories
             return await _connection.QueryAsync<Professor>(query);
         }
 
-        
+        public async Task<Professor> GetProfessorByIdAsync(int id)
+        {
+            const string query = @"SELECT * FROM professor WHERE id = @Id";
+            var professor = await _connection.QueryFirstOrDefaultAsync<Professor>(query, new { Id = id });
+
+            return professor;
+        }
+
+        public async Task RemoveProfessorFromSubjectAsync(int professorId, int subjectId)
+        {
+            _connection.Open();
+
+            using (var transaction = _connection.BeginTransaction())
+            {
+                try
+                {
+                    var query = @"DELETE FROM professor_subject WHERE professor_id = @ProfessorId 
+                                       AND subject_id = @SubjectId";
+                    await _connection.ExecuteAsync(query, new { ProfessorId = professorId, SubjectId = subjectId });
+
+                    query = @"UPDATE session SET status = 'Cancelled' WHERE professor_id = @ProfessorId 
+                            AND subject_id = @SubjectId";
+                    await _connection.ExecuteAsync(query, new { ProfessorId = professorId, SubjectId = subjectId });
+
+                    transaction.Commit(); 
+                }
+
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+
+                finally
+                {
+                    _connection.Close();
+                }
+            }
+        }
+
+        public async Task<bool> IsProfessorTeachingSubject(int professorId, int subjectId)
+        {
+            const string query = @"SELECT EXISTS (
+                                 SELECT 1 
+                                 FROM professor_subject 
+                                 WHERE professor_id = @ProfessorId AND subject_id = @SubjectId);";
+
+            return await _connection.ExecuteScalarAsync<bool>(query, new { ProfessorId = professorId, SubjectId = subjectId });
+        }
+
+        public async Task JoinProfessorToSubjectAsync(int professorId, int subjectId)
+        {
+            const string query = @"INSERT INTO professor_subject VALUES (@ProfessorId, @SubjectId)";
+
+            await _connection.ExecuteAsync(query, new { ProfessorId = professorId, SubjectId = subjectId });
+        }
     }
 }

@@ -16,6 +16,12 @@ namespace dotInstrukcijeBackend.Interfaces
 
         Task<IEnumerable<Professor>> GetTopFiveProfessorsByInstructionsCountAsync();
 
-        
+        Task RemoveProfessorFromSubjectAsync(int professorId, int subjectId);
+
+        Task<Professor> GetProfessorByIdAsync(int id);
+
+        Task<bool> IsProfessorTeachingSubject(int professorId, int subjectId);
+
+        Task JoinProfessorToSubjectAsync(int professorId, int subjectId);
     }
 }

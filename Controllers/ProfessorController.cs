@@ -18,6 +18,8 @@ using dotInstrukcijeBackend.Interfaces;
 using dotInstrukcijeBackend.ProfilePictureSavingUtility;
 using dotInstrukcijeBackend.DataTransferObjects;
 using dotInstrukcijeBackend.HelperFunctions;
+using System.CodeDom;
+using Microsoft.DotNet.Scaffolding.Shared.Messaging;
 
 namespace dotInstrukcijeBackend.Controllers
 {
@@ -174,6 +176,59 @@ namespace dotInstrukcijeBackend.Controllers
             return Ok(new { success = true, professors = listOfProfessorsDTO, message = "Top 5 professors returned successfully!" });
         }
 
-        
+        [Authorize]
+        [HttpDelete("professor-subjects")]
+        public async Task<IActionResult> RemoveProfessorFromSubject([FromBody] RemoveProfessorFromSubjectModel request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { success = false, message = "Invalid data provided." });
+            }
+
+            int professorToRemoveId = request.ProfessorId;
+            int subjectId = request.SubjectId;
+
+            var professor = _professorRepository.GetProfessorByIdAsync(professorToRemoveId);
+            if (professor == null)
+            {
+                return NotFound(new { success = false, message = "Professor not found." });
+            }
+
+            var subject = _subjectRepository.GetSubjectByIdAsync(subjectId);
+            if (subject == null)
+            {
+                return NotFound(new { success = false, message = "Subject not found." });
+            }
+
+            await _professorRepository.RemoveProfessorFromSubjectAsync(professorToRemoveId, subjectId);
+
+            return Ok(new { success = true, mesage = "Professor removed from subject successfully." });
+        }
+
+        [Authorize(Roles = "Professor")]
+        [HttpPost("professor/{professorId}/subjects/{subjectId}/join")]
+        public async Task<IActionResult> JoinProfessorToSubject(int professorId, int subjectId)
+        {
+            var professor = await _professorRepository.GetProfessorByIdAsync(professorId);
+            if (professor == null)
+            {
+                return BadRequest(new { success = false, message = "Professor not found.", code = "PROFESSOR_DOES_NOT_EXIST" });
+            }
+
+            var subject = await _subjectRepository.GetSubjectByIdAsync(subjectId);
+            if (subject == null)
+            {
+                return BadRequest(new { success = false, message = "Subject not found.", code = "SUBJECT_DOES_NOT_EXIST" });
+            }
+
+            if (await _professorRepository.IsProfessorTeachingSubject(professorId, subjectId))
+            {
+                return BadRequest(new { success = false, message = "The professor is already teaching this subject.", code = "PROFESSOR_ALREADY_TEACHING_SUBJECT" });
+            }
+
+            await _professorRepository.AssociateProfessorWithSubjectAsync(professorId, subjectId);
+
+            return Ok(new {success = true, message = "Professor enrolled into subject successfully."});
+        }
     }
 }
