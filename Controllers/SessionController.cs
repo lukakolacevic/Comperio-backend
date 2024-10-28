@@ -30,15 +30,15 @@ namespace dotInstrukcijeBackend.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new { success = false, message = "Invalid data provided." });
+                return BadRequest(new { success = false, message = "Invalid data provided.", code = "INVALID_CREDENTIALS" });
             }
 
             var studentId = HttpContext.User.Claims.First(c => c.Type == "id").Value;
 
-            //if (!await _studentRepository.CanScheduleMoreSessionsAsync(int.Parse(studentId)))
-            //{
-            // return BadRequest(new { success = false, message = "Maximum number of scheduled sessions reached." });
-            //}
+            if (!await _studentRepository.CanScheduleMoreSessionsAsync(int.Parse(studentId)))
+            {
+                return BadRequest(new { success = false, message = "Maximum number of scheduled sessions reached.", code = "MAX_SESSIONS_EXCEEDED" });
+            }
             
 
             var session = new Session
