@@ -35,7 +35,7 @@ namespace dotInstrukcijeBackend.Repositories
 
         public async Task<IEnumerable<Subject>> GetAllSubjectsAsnyc()
         {
-            const string query = "SELECT * FROM subject";
+            const string query = "SELECT * FROM subject ORDER BY title;";
 
             return await _connection.QueryAsync<Subject>(query);
         }
@@ -74,12 +74,18 @@ namespace dotInstrukcijeBackend.Repositories
         public async Task<IEnumerable<Subject>> GetAllSubjectsForProfessorAsync(int professorId)
         {
             const string query = @"SELECT s.* FROM professor p JOIN professor_subject ps ON p.id = ps.professor_id
-                                    JOIN subject s ON ps.subject_id = s.id WHERE p.id = @Professor_id";
+                                    JOIN subject s ON ps.subject_id = s.id WHERE p.id = @Professor_id;";
 
 
             return await _connection.QueryAsync<Subject>(query, new { Professor_id = professorId });
         }
 
-       
+       public async Task<Subject> GetSubjectByIdAsync(int id)
+       {
+            const string query = @"SELECT * FROM subject WHERE id = @Id";
+            var subject = await _connection.QueryFirstOrDefaultAsync<Subject>(query, new { Id = id });
+
+            return subject;
+        }
     }
 }

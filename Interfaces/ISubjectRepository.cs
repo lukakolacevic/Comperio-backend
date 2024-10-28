@@ -14,5 +14,7 @@ namespace dotInstrukcijeBackend.Interfaces
         Task<SubjectDetailsDTO> GetSubjectByURLAsync(string url);
 
         Task<IEnumerable<Subject>> GetAllSubjectsForProfessorAsync(int professorId);
+
+        Task<Subject> GetSubjectByIdAsync(int id);
     }
 }
