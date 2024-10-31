@@ -16,5 +16,6 @@ namespace dotInstrukcijeBackend.Interfaces
         Task<IEnumerable<Subject>> GetAllSubjectsForProfessorAsync(int professorId);
 
         Task<Subject> GetSubjectByIdAsync(int id);
+        Task<IEnumerable<SubjectFrequencyDTO>> GetTopFiveRequestedSubjectsAsync(int studentId);
     }
 }

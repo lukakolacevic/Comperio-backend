@@ -2,6 +2,7 @@
 using dotInstrukcijeBackend.DataTransferObjects;
 using dotInstrukcijeBackend.Interfaces;
 using dotInstrukcijeBackend.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Identity.Client;
 using System.Data;
 
@@ -80,12 +81,22 @@ namespace dotInstrukcijeBackend.Repositories
             return await _connection.QueryAsync<Subject>(query, new { Professor_id = professorId });
         }
 
-       public async Task<Subject> GetSubjectByIdAsync(int id)
-       {
+        public async Task<Subject> GetSubjectByIdAsync(int id)
+        {
             const string query = @"SELECT * FROM subject WHERE id = @Id";
             var subject = await _connection.QueryFirstOrDefaultAsync<Subject>(query, new { Id = id });
 
             return subject;
+        }
+
+        public async Task<IEnumerable<SubjectFrequencyDTO>> GetTopFiveRequestedSubjectsAsync(int studentId)
+        {
+            const string query = @"SELECT * FROM most_chosen_subjects_per_student WHERE student_id = @StudentId;";
+
+            var listOfMostChosenSubjects = await _connection.QueryAsync<SubjectFrequencyDTO>(query, new { StudentId = studentId });
+            
+
+            return listOfMostChosenSubjects;
         }
     }
 }

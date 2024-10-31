@@ -29,15 +29,18 @@ namespace dotInstrukcijeBackend.Controllers
     {
         private readonly IStudentRepository _studentRepository; // student repository
 
+        private readonly ISubjectRepository _subjectRepository;
+
         private readonly IConfiguration _configuration;
 
         private readonly IWebHostEnvironment _hostingEnvironment;
 
-        public StudentController(IStudentRepository studentRepository, IConfiguration configuration, IWebHostEnvironment hostingEnvironment)
+        public StudentController(IStudentRepository studentRepository, IConfiguration configuration, IWebHostEnvironment hostingEnvironment, ISubjectRepository subjectRepository)
         {
             _studentRepository = studentRepository;
             _configuration = configuration;
             _hostingEnvironment = hostingEnvironment;
+            _subjectRepository = subjectRepository;
         }
 
 
@@ -143,6 +146,31 @@ namespace dotInstrukcijeBackend.Controllers
             return Ok(new {success = true, students = listOfStudentsDTO, message = "All students returned successfully!" });
         }
 
+        [Authorize(Roles = "Student")]
+        [HttpGet("students/{studentId}/stats/popular-subjects")]
+        public async Task<IActionResult> GetTopFiveRequestedSubjects(int studentId)
+        {
+            var listOfMostChosenSubjects = _subjectRepository.GetTopFiveRequestedSubjectsAsync(studentId);
+
+            if (listOfMostChosenSubjects == null)
+            {
+                return NotFound(new { message = "No subjects found for the specified student." });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                listOfMostChosenSubjects = listOfMostChosenSubjects,
+                message = "Top subjects returned successfully."
+            });
+        }
+
+        [Authorize(Roles = "Student")]
+        [HttpGet("students/{studentId}/stats/popular-professors")]
+        public async Task<IActionResult> GetTopFiveRequestedProfessors(int studentId)
+        {
+            return null;
+        }
 
     }
 }
