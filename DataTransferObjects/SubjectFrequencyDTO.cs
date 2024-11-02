@@ -1,6 +1,4 @@
-﻿using Org.BouncyCastle.Asn1;
-
-namespace dotInstrukcijeBackend.DataTransferObjects
+﻿namespace dotInstrukcijeBackend.DataTransferObjects
 {
     public class SubjectFrequencyDTO
     {

@@ -1,8 +1,10 @@
-﻿namespace dotInstrukcijeBackend.ProfilePictureSavingUtility
+﻿using dotInstrukcijeBackend.Interfaces.Utility;
+
+namespace dotInstrukcijeBackend.ProfilePictureSavingUtility
 {
-    public static class ProfilePhotoSaver
+    public class ProfilePhotoSaver : IProfilePhotoSaver
     {
-        public static async Task<byte[]> SaveProfilePicture(IFormFile profilePicture)
+        public async Task<byte[]> SaveProfilePictureAsync(IFormFile profilePicture)
         {
             if (profilePicture == null || profilePicture.Length == 0)
             {

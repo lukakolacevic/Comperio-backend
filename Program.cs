@@ -6,7 +6,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using dotInstrukcijeBackend.Interfaces;
 using System.Data.SQLite;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -14,6 +13,14 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Npgsql;
 using System.Text.Json;
+using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
+using dotInstrukcijeBackend.Interfaces.ServiceInterfaces;
+using dotInstrukcijeBackend.Services;
+using dotInstrukcijeBackend.Interfaces.Utility;
+using dotInstrukcijeBackend.PasswordHashingUtilities;
+using dotInstrukcijeBackend.ProfilePictureSavingUtility;
+using dotInstrukcijeBackend.JWTTokenUtility;
+using dotInstrukcijeBackend.Interfaces.Service;
 
 internal class Program
 {
@@ -31,6 +38,15 @@ internal class Program
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();    
         builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 
+        builder.Services.AddScoped<IStudentService, StudentService>();
+        builder.Services.AddScoped<IProfessorService, ProfessorService>();
+        builder.Services.AddScoped<ISubjectService, SubjectService>();
+        builder.Services.AddScoped<ISessionService, SessionService>();
+
+
+        builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+        builder.Services.AddScoped<IProfilePhotoSaver, ProfilePhotoSaver>();
+        builder.Services.AddScoped<IJWTTokenGenerator, JWTTokenGenerator>();
         // Add CORS policy
         builder.Services.AddCors(options =>
         {

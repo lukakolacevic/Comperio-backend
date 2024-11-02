@@ -17,146 +17,126 @@ using Microsoft.AspNetCore.Authorization;
 using NServiceBus.Testing;
 using Microsoft.AspNetCore.Hosting;
 using dotInstrukcijeBackend.Repositories;
-using dotInstrukcijeBackend.Interfaces;
 using dotInstrukcijeBackend.ProfilePictureSavingUtility;
 using dotInstrukcijeBackend.JWTTokenUtility;
 using dotInstrukcijeBackend.DataTransferObjects;
+using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
+using dotInstrukcijeBackend.Interfaces.ServiceInterfaces;
 
 namespace dotInstrukcijeBackend.Controllers
 {
     [ApiController]
     public class StudentController : ControllerBase
     {
-        private readonly IStudentRepository _studentRepository; // student repository
+        private readonly IStudentService _studentService;
 
-        private readonly ISubjectRepository _subjectRepository;
-
-        private readonly IConfiguration _configuration;
-
-        private readonly IWebHostEnvironment _hostingEnvironment;
-
-        public StudentController(IStudentRepository studentRepository, IConfiguration configuration, IWebHostEnvironment hostingEnvironment, ISubjectRepository subjectRepository)
-        {
-            _studentRepository = studentRepository;
-            _configuration = configuration;
-            _hostingEnvironment = hostingEnvironment;
-            _subjectRepository = subjectRepository;
+        public StudentController(IStudentService studentService)
+        { 
+            _studentService = studentService;
         }
 
 
         [HttpPost("register/student")]
         public async Task<IActionResult> Register([FromForm] StudentRegistrationModel model)
         {
+            // Validate the model state
             if (!ModelState.IsValid)
             {
                 return BadRequest(new { success = false, message = "Invalid data provided." });
             }
 
-            if (await _studentRepository.GetStudentByEmailAsync(model.Email) is not null)
+            // Call the service method
+            var result = await _studentService.RegisterStudentAsync(model);
+
+            // Check the result and return appropriate response
+            if (!result.IsSuccess)
             {
-                return BadRequest(new { success = false, message = "Email is already in use." });
+                return StatusCode(result.StatusCode, new {success = result.IsSuccess, message = result.ErrorMessage});
             }
 
-            //byte[] profilePictureSaved = await SaveProfilePicture(model.profilePicture); 
-
-            var student = new Student
-            {
-                Email = model.Email,
-                Name = model.Name,
-                Surname = model.Surname,
-                Password = PasswordHasher.HashPassword(model.Password),
-                ProfilePicture = await ProfilePhotoSaver.SaveProfilePicture(model.ProfilePicture) 
-            };
-
-            await _studentRepository.AddStudentAsync(student);
-            
-
-            var response = new
-            {
-                success = true,
-                message = "Student registered successfully!"
-            };
-            return StatusCode(201, response);
+            // Return success response
+            return StatusCode(201, new { success = true, message = "Student registered successfully!" });
         }
 
 
         [HttpPost("login/student")]
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
-            var student = await _studentRepository.GetStudentByEmailAsync(model.Email);
+            var result = await _studentService.LoginStudentAsync(model);
 
-            if (student == null)
+            if (!result.IsSuccess)
             {
-                return BadRequest(new { success = false, message = "User not found." });
+                return StatusCode(result.StatusCode, new {success = result.IsSuccess, message = result.ErrorMessage});
             }
             
-            if (!PasswordHasher.VerifyPassword(student.Password, model.Password))
-            {
-                return BadRequest(new { success = false, message = "Invalid password." });
-            }
-
-            // Generiraj studentov JWT token 
-            var token = JWTTokenGenerator.GenerateJwtToken(student, _configuration);
-
-            String profilePhotoBase64String = student.ProfilePicture is not null ? Convert.ToBase64String(student.ProfilePicture) : null;
+            var (student, token) = result.Data;
 
             return Ok(new
             {
                 success = true,
-                student = new StudentDTO(student.Id, student.Name, student.Surname, profilePhotoBase64String), 
-                token,
-                message = "Login successful."
+                student = student,
+                token = token,
+                message = "Student logged in successfully."
             });
         }
 
         
-
         [Authorize]
         [HttpGet("student/{email}")]
-
         public async Task<IActionResult> GetStudentByEmail(string email)
         {
-            var student = await _studentRepository.GetStudentByEmailAsync(email);
+            var result = await _studentService.FindStudentByEmailAsync(email);
 
-            if (student == null)
+            if (!result.IsSuccess)
             {
-                return NotFound(new { success = false, message = "Student not found." });
+                return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
             }
 
-            String profilePhotoBase64String = student.ProfilePicture is not null ? Convert.ToBase64String(student.ProfilePicture) : null;
-            var studentDTO = new StudentDTO(student.Id, student.Name, student.Surname, profilePhotoBase64String);
-            return Ok(new { success = true, student = studentDTO, message = "Student found successfully!" });
+            var student = result.Data;
+            return Ok(new { success = true, student = student, message = "Student returned successfuly." });
         }
+
 
         [Authorize]
         [HttpGet("students")]
         public async Task<IActionResult> GetAllStudents()
         {
-            var listOfStudents = await _studentRepository.GetAllStudentsAsync();
+            var result = await _studentService.FindAllStudentsAsync();
 
-            var listOfStudentsDTO = new List<StudentDTO>();
-
-            foreach (var student in listOfStudents)
+            if (!result.IsSuccess)
             {
-                String profilePhotoBase64String = student.ProfilePicture is not null ? Convert.ToBase64String(student.ProfilePicture) : null;
-                var studentDTO = new StudentDTO(student.Id, student.Name, student.Surname, profilePhotoBase64String);
-                listOfStudentsDTO.Add(studentDTO);
+                return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
             }
+            
+            var students = result.Data;
 
-            return Ok(new {success = true, students = listOfStudentsDTO, message = "All students returned successfully!" });
-        }
+            return Ok(new
+            {
+                success = true,
+                students = students,
+                message = "All students returned successfully."
+            });
+
+        }   
 
         [Authorize(Roles = "Student")]
         [HttpGet("students/{studentId}/stats/popular-subjects")]
         public async Task<IActionResult> GetTopFiveRequestedSubjects(int studentId)
         {
-            var listOfMostChosenSubjects = _subjectRepository.GetTopFiveRequestedSubjectsAsync(studentId);
-
-            if (listOfMostChosenSubjects == null)
+            var studentIdToCheck = int.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
+            if (studentId != studentIdToCheck)
             {
-                return NotFound(new { message = "No subjects found for the specified student." });
+                return Unauthorized(new { success = false, message = "Student unauthorized to get all subjects." });
             }
 
+            var result = await _studentService.FindTopFiveRequestedSubjectsAsync(studentId);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
+            }
+
+            var listOfMostChosenSubjects = result.Data;
             return Ok(new
             {
                 success = true,
@@ -169,8 +149,21 @@ namespace dotInstrukcijeBackend.Controllers
         [HttpGet("students/{studentId}/stats/popular-professors")]
         public async Task<IActionResult> GetTopFiveRequestedProfessors(int studentId)
         {
-            return null;
-        }
+            var result = await _studentService.FindTopFiveRequestedProfessorsAsync(studentId);
 
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
+            }
+
+            var listOfMostChosenProfessors = result.Data;
+
+            return Ok(new
+            {
+                success = true,
+                listOfMostChosenProfessors = listOfMostChosenProfessors,
+                message = "Top professors returned successfully."
+            });
+        }
     }
 }

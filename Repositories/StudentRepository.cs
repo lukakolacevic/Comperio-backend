@@ -1,5 +1,5 @@
 ﻿using Dapper;
-using dotInstrukcijeBackend.Interfaces;
+using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Models;
 using System.Data;
 

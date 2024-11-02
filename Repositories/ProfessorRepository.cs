@@ -1,5 +1,6 @@
 ﻿using Dapper;
-using dotInstrukcijeBackend.Interfaces;
+using dotInstrukcijeBackend.DataTransferObjects;
+using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Models;
 using Humanizer.Localisation.TimeToClockNotation;
 using Npgsql.Replication.PgOutput.Messages;
@@ -15,6 +16,7 @@ namespace dotInstrukcijeBackend.Repositories
         {  
             _connection = connection;
         }
+
 
         public async Task<Professor> GetProfessorByEmailAsync(string email)
         {
@@ -43,6 +45,7 @@ namespace dotInstrukcijeBackend.Repositories
             });
         }
 
+
         public async Task<IEnumerable<Professor>> GetAllProfessorsAsync()
         {
             const string query = @"SELECT id, email, name, surname, password, profile_picture, instructions_count
@@ -50,6 +53,7 @@ namespace dotInstrukcijeBackend.Repositories
 
             return await _connection.QueryAsync<Professor>(query);
         }
+
 
         public async Task AssociateProfessorWithSubjectAsync(int professorId, int subjectId)
         {
@@ -59,6 +63,7 @@ namespace dotInstrukcijeBackend.Repositories
             await _connection.ExecuteAsync(query, new { ProfessorId = professorId, SubjectId = subjectId });
         }
 
+
         public async Task<IEnumerable<Professor>> GetTopFiveProfessorsByInstructionsCountAsync()
         {
             const string query = @"SELECT id, email, name, surname, password, profile_picture, instructions_count FROM professor
@@ -66,6 +71,7 @@ namespace dotInstrukcijeBackend.Repositories
 
             return await _connection.QueryAsync<Professor>(query);
         }
+
 
         public async Task<Professor> GetProfessorByIdAsync(int id)
         {
@@ -75,7 +81,8 @@ namespace dotInstrukcijeBackend.Repositories
             return professor;
         }
 
-        public async Task RemoveProfessorFromSubjectAsync(int professorId, int subjectId)
+
+        public async Task DeleteProfessorFromSubjectAsync(int professorId, int subjectId)
         {
             _connection.Open();
 
@@ -107,6 +114,7 @@ namespace dotInstrukcijeBackend.Repositories
             }
         }
 
+
         public async Task<bool> IsProfessorTeachingSubject(int professorId, int subjectId)
         {
             const string query = @"SELECT EXISTS (
@@ -117,11 +125,14 @@ namespace dotInstrukcijeBackend.Repositories
             return await _connection.ExecuteScalarAsync<bool>(query, new { ProfessorId = professorId, SubjectId = subjectId });
         }
 
-        public async Task JoinProfessorToSubjectAsync(int professorId, int subjectId)
-        {
-            const string query = @"INSERT INTO professor_subject VALUES (@ProfessorId, @SubjectId)";
 
-            await _connection.ExecuteAsync(query, new { ProfessorId = professorId, SubjectId = subjectId });
+        public async Task<IEnumerable<ProfessorFrequencyDTO>> GetTopFiveRequestedProfessorsAsync(int studentId)
+        {
+            const string query = @"SELECT * FROM most_chosen_professors_per_student WHERE student_id = @StudentId;";
+
+            var listOfMostChosenProfessors = await _connection.QueryAsync<ProfessorFrequencyDTO>(query, new { StudentId = studentId });
+
+            return listOfMostChosenProfessors;
         }
     }
 }

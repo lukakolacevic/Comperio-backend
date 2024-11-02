@@ -1,9 +1,11 @@
 ﻿using Dapper;
 using dotInstrukcijeBackend.DataTransferObjects;
-using dotInstrukcijeBackend.Interfaces;
+using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Models;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Identity.Client;
+using Org.BouncyCastle.Asn1;
+using System.Collections;
 using System.Data;
 
 namespace dotInstrukcijeBackend.Repositories
@@ -95,7 +97,6 @@ namespace dotInstrukcijeBackend.Repositories
 
             var listOfMostChosenSubjects = await _connection.QueryAsync<SubjectFrequencyDTO>(query, new { StudentId = studentId });
             
-
             return listOfMostChosenSubjects;
         }
     }

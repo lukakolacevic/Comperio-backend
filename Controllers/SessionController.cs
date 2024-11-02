@@ -1,27 +1,23 @@
 ﻿using dotInstrukcijeBackend.HelperFunctions;
-using dotInstrukcijeBackend.Interfaces;
+using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
+using dotInstrukcijeBackend.Interfaces.Service;
 using dotInstrukcijeBackend.Models;
 using dotInstrukcijeBackend.Repositories;
 using dotInstrukcijeBackend.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace dotInstrukcijeBackend.Controllers
 {
     public class SessionController : ControllerBase
     {
-        private readonly ISessionRepository _sessionRepository;
+        private readonly ISessionService _sessionService;
 
-        private readonly IStudentRepository _studentRepository;
-
-        private readonly ILogger<SessionController> _logger;
-
-        public SessionController(ISessionRepository sessionRepository, IStudentRepository studentRepository, ILogger<SessionController> logger)
+        public SessionController(ISessionService sessionService)
         {
-            _sessionRepository = sessionRepository;
-            _studentRepository = studentRepository;
-            _logger = logger;
+            _sessionService = sessionService;
         }
 
         [Authorize(Roles = "Student")]
@@ -33,117 +29,90 @@ namespace dotInstrukcijeBackend.Controllers
                 return BadRequest(new { success = false, message = "Invalid data provided.", code = "INVALID_CREDENTIALS" });
             }
 
-            var studentId = HttpContext.User.Claims.First(c => c.Type == "id").Value;
+            var studentId = int.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
+            var result = await _sessionService.ScheduleSessionAsync(studentId, request);
 
-            if (!await _studentRepository.CanScheduleMoreSessionsAsync(int.Parse(studentId)))
+            if (!result.IsSuccess)
             {
-                return BadRequest(new { success = false, message = "Maximum number of scheduled sessions reached.", code = "MAX_SESSIONS_EXCEEDED" });
+                return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage});
             }
-            
-
-            var session = new Session
-            {
-                StudentId = int.Parse(studentId),
-                ProfessorId = request.ProfessorId,
-                SubjectId = request.SubjectId,
-                DateTime = request.DateTime,
-                Status = "Pending"
-            };
-
-            await _sessionRepository.AddSessionAysnc(session);
 
             return Ok(new { success = true, message = "Session created successfully." });
         }
 
         [Authorize(Roles = "Student")]
-        [HttpGet("student/sessions")]
-        public async Task<IActionResult> GetAllSessions()
+        [HttpGet("sessions/students/{studentId}")]
+        public async Task<IActionResult> GetAllStudentSessions(int studentId)
         {
-            var studentId = HttpContext.User.Claims.First(c => c.Type == "id").Value;
+            var studentIdToCheck = int.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
+            if (studentId != studentIdToCheck)
+            {
+                return Unauthorized(new { success = false, message = "Student unauthorized to get all sessions." });
+            }
+            var result = await _sessionService.GetAllStudentSessionsAsync(studentId);
 
-            var sessions = await _sessionRepository.GetAllStudentSessionsAsync(int.Parse(studentId));
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
+            }
 
             return Ok(new
             {
                 success = true,
-
-                pastSessions = sessions.PastSessions,
-
-                upcomingSessions = sessions.UpcomingSessions,
-
-                pendingRequests = sessions.PendingSessions,
-
-                cancelledSessions = sessions.CancelledSessions,
-
-                message = "All sessions retrieved successfully."
+                pastSessions = result.Data.PastSessions,
+                upcomingSessions = result.Data.UpcomingSessions,
+                pendingRequests = result.Data.PendingSessions,
+                cancelledSessions = result.Data.CancelledSessions,
+                message = "All student sessions retrieved successfully."
             });
         }
 
+
         [Authorize(Roles = "Professor")]
-        [HttpGet("professor/sessions")]
-        public async Task<IActionResult> GetAllProfessorSessions()
+        [HttpGet("sessions/professors/{professorId}")]
+        public async Task<IActionResult> GetAllProfessorSessions(int professorId)
         {
-            var professorId = int.Parse(HttpContext.User.Claims.First(c => c.Type == "id").Value);
-            var sessions = await _sessionRepository.GetAllSessionsForProfessorAsync(professorId);
+            var professorIdToCheck = int.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
+            if (professorId != professorIdToCheck)
+            {
+                return Unauthorized(new { success = false, message = "Professor unauthorized to get all sessions." });
+            }
+            var result = await _sessionService.GetAllProfessorSessionsAsync(professorId);
+
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
+            }
 
             return Ok(new
             {
                 success = true,
-
-                pastSessions = sessions.PastSessions,
-
-                upcomingSessions = sessions.UpcomingSessions,
-
-                pendingRequests = sessions.PendingSessions,
-
-                cancelledSessions = sessions.CancelledSessions,
-
+                pastSessions = result.Data.PastSessions,
+                upcomingSessions = result.Data.UpcomingSessions,
+                pendingRequests = result.Data.PendingSessions,
+                cancelledSessions = result.Data.CancelledSessions,
                 message = "All professor sessions retrieved successfully."
             });
         }
 
         [Authorize(Roles = "Professor")]
-        [HttpPut("sessions")]
+        [HttpPatch("sessions")]
         public async Task<IActionResult> ManageSessionRequest([FromBody] ManageSessionRequestModel request)
         {
-            if (request == null || request.SessionId <= 0 || string.IsNullOrEmpty(request.NewStatus))
+            if (!ModelState.IsValid)
             {
                 return BadRequest(new { success = false, message = "Invalid data provided." });
             }
 
-            var professorId = HttpContext.User.Claims.First(c => c.Type == "id").Value;
-            var session = await _sessionRepository.GetSessionByIdAsync(request.SessionId);
+            var professorId = int.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
+            var result = await _sessionService.ManageSessionRequestAsync(professorId, request);
 
-            if (session == null)
+            if (!result.IsSuccess)
             {
-                return NotFound(new { success = false, message = "Session not found." });
+                return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
             }
 
-            if (session.ProfessorId != int.Parse(professorId))
-            {
-                return Unauthorized(new { success = false, message = "Unauthorized professor." });
-            }
-
-            // Validate action type (accept or reject)
-            if (request.NewStatus != "Confirmed" && request.NewStatus != "Cancelled")
-            {
-                return BadRequest(new { success = false, message = "Invalid action type." });
-            }
-
-            // Additional checks based on the action type
-            if (request.NewStatus == "Confirmed" && session.Status != "Pending")
-            {
-                return BadRequest(new { success = false, message = "Only pending sessions can be accepted." });
-            }
-
-            // Perform the action (Accept or Reject)
-            await _sessionRepository.ManageSessionRequestAsync(session.Id, request.NewStatus);
-
-            return Ok(new
-            {
-                success = true,
-                message = $"Session {request.NewStatus.ToLower()} successfully."
-            });
+            return Ok(new { success = true, message = $"Session {request.NewStatus.ToLower()} successfully." });
         }
 
     }

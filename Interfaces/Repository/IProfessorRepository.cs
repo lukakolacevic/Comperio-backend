@@ -1,6 +1,7 @@
-﻿using dotInstrukcijeBackend.Models;
+﻿using dotInstrukcijeBackend.DataTransferObjects;
+using dotInstrukcijeBackend.Models;
 
-namespace dotInstrukcijeBackend.Interfaces
+namespace dotInstrukcijeBackend.Interfaces.RepositoryInterfaces
 {
     public interface IProfessorRepository
     {
@@ -16,12 +17,12 @@ namespace dotInstrukcijeBackend.Interfaces
 
         Task<IEnumerable<Professor>> GetTopFiveProfessorsByInstructionsCountAsync();
 
-        Task RemoveProfessorFromSubjectAsync(int professorId, int subjectId);
+        Task DeleteProfessorFromSubjectAsync(int professorId, int subjectId);
 
         Task<Professor> GetProfessorByIdAsync(int id);
 
         Task<bool> IsProfessorTeachingSubject(int professorId, int subjectId);
 
-        Task JoinProfessorToSubjectAsync(int professorId, int subjectId);
+        Task<IEnumerable<ProfessorFrequencyDTO>> GetTopFiveRequestedProfessorsAsync(int studentId);
     }
 }

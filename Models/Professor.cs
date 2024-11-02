@@ -1,8 +1,9 @@
+using dotInstrukcijeBackend.Interfaces.User;
 using System.ComponentModel.DataAnnotations;
 
 namespace dotInstrukcijeBackend.Models
 {
-    public class Professor
+    public class Professor : IUser
     {
         [Key]
         public int Id { get; set; } 
@@ -12,5 +13,6 @@ namespace dotInstrukcijeBackend.Models
         public String Password { get; set; }
         public byte[]? ProfilePicture { get; set; }
         public int InstructionsCount { get; set; }
+        public string Role => "Professor";
     }
 }

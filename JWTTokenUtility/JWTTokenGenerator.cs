@@ -1,4 +1,6 @@
-﻿using dotInstrukcijeBackend.Models;
+﻿using dotInstrukcijeBackend.Interfaces.User;
+using dotInstrukcijeBackend.Interfaces.Utility;
+using dotInstrukcijeBackend.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -6,20 +8,21 @@ using System.Text;
 
 namespace dotInstrukcijeBackend.JWTTokenUtility
 {
-    public static class JWTTokenGenerator
+    public class JWTTokenGenerator : IJWTTokenGenerator
     {
-        public static string GenerateJwtToken(Student student, IConfiguration configuration)
+        public string GenerateJwtToken(IUser user, IConfiguration configuration)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(configuration["Jwt:Key"]);
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                new Claim(ClaimTypes.Email, student.Email),
-                new Claim("id", student.Id.ToString()),
-                new Claim(ClaimTypes.Role, "Student")
-            }),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim("id", user.Id.ToString()),
+            new Claim(ClaimTypes.Role, user.Role)
+        }),
                 Expires = DateTime.UtcNow.AddDays(7),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
@@ -27,5 +30,6 @@ namespace dotInstrukcijeBackend.JWTTokenUtility
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
         }
+
     }
 }

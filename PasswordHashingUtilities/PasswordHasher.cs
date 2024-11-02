@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+﻿using dotInstrukcijeBackend.Interfaces.Utility;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Security.Cryptography;
 
 namespace dotInstrukcijeBackend.PasswordHashingUtilities
 {
-    public static class PasswordHasher
+    public class PasswordHasher : IPasswordHasher
     {
-        public static string HashPassword(string password)
+        public string HashPassword(string password)
         {
             // Generiranje random salt-a
             byte[] salt = new byte[128 / 8];
@@ -27,7 +29,7 @@ namespace dotInstrukcijeBackend.PasswordHashingUtilities
             return $"{Convert.ToBase64String(salt)}.{hashed}";
         }
 
-        public static bool VerifyPassword(string hashedPasswordWithSalt, string passwordToCheck)
+        public bool VerifyPassword(string hashedPasswordWithSalt, string passwordToCheck)
         {
             var parts = hashedPasswordWithSalt.Split('.', 2);
 
@@ -49,11 +51,6 @@ namespace dotInstrukcijeBackend.PasswordHashingUtilities
 
             // Usporedba hashiranih lozinki
             return hashedPassword == hashOfInput;
-        }
-
-        internal static bool VerifyPassword(object password1, string password2)
-        {
-            throw new NotImplementedException();
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using dotInstrukcijeBackend.DataTransferObjects;
 using dotInstrukcijeBackend.Models;
 
-namespace dotInstrukcijeBackend.Interfaces
+namespace dotInstrukcijeBackend.Interfaces.RepositoryInterfaces
 {
     public interface ISubjectRepository
     {
