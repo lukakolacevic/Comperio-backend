@@ -9,8 +9,7 @@ namespace dotInstrukcijeBackend.Interfaces.ServiceInterfaces
     {
         Task<ServiceResult> RegisterStudentAsync(StudentRegistrationModel model);
 
-        Task<ServiceResult<(StudentDTO student, string token)>> LoginStudentAsync(LoginModel model);
-
+        Task<ServiceResult<(StudentDTO, string, string)>> LoginStudentAsync(LoginModel model);
         Task<ServiceResult<StudentDTO>> FindStudentByEmailAsync(string email);
 
         Task<ServiceResult<IEnumerable<StudentDTO>>> FindAllStudentsAsync();
