@@ -11,5 +11,6 @@ namespace dotInstrukcijeBackend.Interfaces.RepositoryInterfaces
         Task<IEnumerable<Student>> GetAllStudentsAsync();
 
         Task<bool> CanScheduleMoreSessionsAsync(int studentId);
+        Task<Student> GetStudentByIdAsync(int id);
     }
 }
