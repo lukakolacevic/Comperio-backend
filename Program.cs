@@ -21,21 +21,29 @@ using dotInstrukcijeBackend.PasswordHashingUtilities;
 using dotInstrukcijeBackend.ProfilePictureSavingUtility;
 using dotInstrukcijeBackend.JWTTokenUtility;
 using dotInstrukcijeBackend.Interfaces.Service;
+using Microsoft.AspNetCore.CookiePolicy;
 
 internal class Program
 {
     private static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        // Dapper configuration
         Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+
+        // Add services to the container
         builder.Services.AddControllers();
+        builder.Services.AddHttpContextAccessor();
+
+        // Database connection
         builder.Services.AddScoped<IDbConnection>(sp =>
             new NpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
-        // Repository for Dapper
-        
+
+        // Repository and service registrations
         builder.Services.AddScoped<IStudentRepository, StudentRepository>();
         builder.Services.AddScoped<IProfessorRepository, ProfessorRepository>();
-        builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();    
+        builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
         builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 
         builder.Services.AddScoped<IStudentService, StudentService>();
@@ -43,10 +51,10 @@ internal class Program
         builder.Services.AddScoped<ISubjectService, SubjectService>();
         builder.Services.AddScoped<ISessionService, SessionService>();
 
-
         builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
         builder.Services.AddScoped<IProfilePhotoSaver, ProfilePhotoSaver>();
-        builder.Services.AddScoped<IJWTTokenGenerator, JWTTokenGenerator>();
+        builder.Services.AddScoped<ITokenService, TokenService>();
+
         // Add CORS policy
         builder.Services.AddCors(options =>
         {
@@ -59,12 +67,11 @@ internal class Program
             });
         });
 
+        // Configure JSON options
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
-            // This ensures that camelCase properties in the incoming JSON will be converted to PascalCase in C# models.
             options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         });
-        
 
         // Configure Swagger
         builder.Services.AddSwaggerGen(options =>
@@ -82,15 +89,20 @@ internal class Program
             };
             options.AddSecurityDefinition("Bearer", securityScheme);
             options.AddSecurityRequirement(new OpenApiSecurityRequirement {
-                { securityScheme, new string[] {} }
+                { securityScheme, new string[] { } }
             });
         });
 
+        // Configure JWT authentication
         SetUpJWT(builder);
-        builder.Logging.ClearProviders(); //
-        builder.Logging.AddConsole();    //logging
+
+        // Configure logging
+        builder.Logging.ClearProviders();
+        builder.Logging.AddConsole();
+
         var app = builder.Build();
 
+        // Configure the HTTP request pipeline
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -104,28 +116,52 @@ internal class Program
         app.Run();
     }
 
-
     private static void SetUpJWT(WebApplicationBuilder builder)
     {
-        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme) // Set default authentication scheme
-            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-                };
-            });
+        var accessTokenSecretKey = builder.Configuration["Jwt:AccessTokenSecretKey"];
 
-        builder.Services.AddAuthorization(options =>
+        builder.Services.AddAuthentication(options =>
         {
-            options.DefaultPolicy = new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme)
-                .RequireAuthenticatedUser()
-                .Build();
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            var key = Encoding.ASCII.GetBytes(accessTokenSecretKey);
+
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false, // Adjust based on your requirements
+                ValidateAudience = false, // Adjust based on your requirements
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero // Optional: eliminate clock skew
+            };
+
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    // Read the token from the accessToken cookie
+                    var accessToken = context.HttpContext.Request.Cookies["accessToken"];
+                    if (!string.IsNullOrEmpty(accessToken))
+                    {
+                        context.Token = accessToken;
+                    }
+                    return Task.CompletedTask;
+                }
+            };
+        });
+
+        builder.Services.AddAuthorization();
+
+        // Configure a secure cookie policy for tokens
+        builder.Services.Configure<CookiePolicyOptions>(options =>
+        {
+            options.HttpOnly = HttpOnlyPolicy.Always;
+            options.Secure = CookieSecurePolicy.SameAsRequest; // Use 'Always' if you require HTTPS
+            options.MinimumSameSitePolicy = SameSiteMode.None;
         });
     }
-
 }
