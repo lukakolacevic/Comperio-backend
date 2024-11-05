@@ -2,8 +2,8 @@
 {
     public class ProfessorFrequencyDTO
     {
-        public string ProfessorName { get; set; }
-        public string ProfessorSurname { get; set; }
+        public string Name { get; set; }
+        public string Surname { get; set; }
         public int SessionCount { get; set; }
     }
 }
