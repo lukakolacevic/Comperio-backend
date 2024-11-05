@@ -93,7 +93,7 @@ namespace dotInstrukcijeBackend.Repositories
 
         public async Task<IEnumerable<SubjectFrequencyDTO>> GetTopFiveRequestedSubjectsAsync(int studentId)
         {
-            const string query = @"SELECT * FROM most_chosen_subjects_per_student WHERE student_id = @StudentId;";
+            const string query = @"SELECT * FROM most_chosen_subjects_per_student WHERE student_id = @StudentId LIMIT 5;";
 
             var listOfMostChosenSubjects = await _connection.QueryAsync<SubjectFrequencyDTO>(query, new { StudentId = studentId });
             
