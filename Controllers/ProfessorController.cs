@@ -23,16 +23,20 @@ using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Interfaces.Service;
 using dotInstrukcijeBackend.Services;
 using Microsoft.CodeAnalysis.FlowAnalysis.DataFlow.ValueContentAnalysis;
+using Azure.Core;
 
 namespace dotInstrukcijeBackend.Controllers
 {
     [ApiController]
     public class ProfessorController : ControllerBase
     {
-        private readonly IProfessorService _professorService; 
-        public ProfessorController(IProfessorService professorService)
+        private readonly IProfessorService _professorService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public ProfessorController(IProfessorService professorService, IHttpContextAccessor httpContextAccessor)
         {
             _professorService = professorService;
+            _httpContextAccessor = httpContextAccessor;
+
         }
 
 
@@ -60,9 +64,50 @@ namespace dotInstrukcijeBackend.Controllers
                 return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
             }
 
-            var (professor, token) = result.Data;
-            return Ok(new { success = true, professor = result.Data.professor, token = result.Data.token, message = "Professor logged in successfully." });
+            var (professor, accessToken, refreshToken) = result.Data;
+
+            Console.WriteLine(accessToken);
+            Console.WriteLine(refreshToken);
+
+            if (_httpContextAccessor.HttpContext == null)
+            {
+                Console.WriteLine("check");
+            }
+
+            _httpContextAccessor.HttpContext?.Response.Cookies.Append("accessToken", accessToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddMinutes(15)
+            });
+
+            _httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddDays(7)
+            });
+
+            return Ok(new { success = true, professor = professor, message = "Professor logged in successfully." });
         }
+
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            _httpContextAccessor.HttpContext?.Response.Cookies.Delete("accessToken");
+            _httpContextAccessor.HttpContext?.Response.Cookies.Delete("refreshToken");
+
+            return Ok(new
+            {
+                success = true,
+                message = "User logged out successfully."
+            });
+        }
+
+
 
         [Authorize]
         [HttpGet("professor/{email}")]

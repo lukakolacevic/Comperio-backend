@@ -22,6 +22,7 @@ using dotInstrukcijeBackend.JWTTokenUtility;
 using dotInstrukcijeBackend.DataTransferObjects;
 using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Interfaces.ServiceInterfaces;
+using Azure.Core;
 
 namespace dotInstrukcijeBackend.Controllers
 {
@@ -29,10 +30,12 @@ namespace dotInstrukcijeBackend.Controllers
     public class StudentController : ControllerBase
     {
         private readonly IStudentService _studentService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public StudentController(IStudentService studentService)
+        public StudentController(IStudentService studentService, IHttpContextAccessor httpContextAccessor)
         { 
             _studentService = studentService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
 
@@ -69,17 +72,33 @@ namespace dotInstrukcijeBackend.Controllers
                 return StatusCode(result.StatusCode, new {success = result.IsSuccess, message = result.ErrorMessage});
             }
             
-            var (student, token) = result.Data;
+            var (student, accessToken, refreshToken) = result.Data;
+
+            _httpContextAccessor.HttpContext?.Response.Cookies.Append("accessToken", accessToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddMinutes(15)
+            }); 
+
+            _httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTime.UtcNow.AddDays(7)
+            });
 
             return Ok(new
             {
                 success = true,
                 student = student,
-                token = token,
                 message = "Student logged in successfully."
             });
         }
 
+        
         
         [Authorize]
         [HttpGet("student/{email}")]
@@ -126,7 +145,7 @@ namespace dotInstrukcijeBackend.Controllers
             var studentIdToCheck = int.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
             if (studentId != studentIdToCheck)
             {
-                return Unauthorized(new { success = false, message = "Student unauthorized to get all subjects." });
+                return Unauthorized(new { success = false, message = "Student unauthorized to get most popular subjects." });
             }
 
             var result = await _studentService.FindTopFiveRequestedSubjectsAsync(studentId);
@@ -149,6 +168,12 @@ namespace dotInstrukcijeBackend.Controllers
         [HttpGet("students/{studentId}/stats/popular-professors")]
         public async Task<IActionResult> GetTopFiveRequestedProfessors(int studentId)
         {
+            var studentIdToCheck = int.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
+            if (studentId != studentIdToCheck)
+            {
+                return Unauthorized(new { success = false, message = "Student unauthorized to get most popular subjects." });
+            }
+
             var result = await _studentService.FindTopFiveRequestedProfessorsAsync(studentId);
 
             if (!result.IsSuccess)
