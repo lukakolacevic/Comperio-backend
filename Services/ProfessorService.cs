@@ -14,10 +14,10 @@ namespace dotInstrukcijeBackend.Services
     {
         private readonly IProfessorRepository _professorRepository;
         private readonly ISubjectRepository _subjectRepository;
-        private readonly IConfiguration _configuration;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IProfilePhotoSaver _profilePhotoSaver;
-        private readonly IJWTTokenGenerator _jwtTokenGenerator;
+        private readonly ITokenService _tokenService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
 
         public ProfessorService(
@@ -26,14 +26,15 @@ namespace dotInstrukcijeBackend.Services
             IConfiguration configuration,
             IPasswordHasher passwordHasher,
             IProfilePhotoSaver profilePhotoSaver,
-            IJWTTokenGenerator jwtTokenGenerator)
+            ITokenService tokenService,
+            IHttpContextAccessor httpContextAccessor)
         {
             _professorRepository = professorRepository;
             _subjectRepository = subjectRepository;
-            _configuration = configuration;
             _passwordHasher = passwordHasher;
             _profilePhotoSaver = profilePhotoSaver;
-            _jwtTokenGenerator = jwtTokenGenerator;
+            _tokenService = tokenService;
+            _httpContextAccessor = httpContextAccessor; 
         }
 
 
@@ -74,20 +75,24 @@ namespace dotInstrukcijeBackend.Services
         }
 
 
-        public async Task<ServiceResult<(ProfessorDTO professor, string token)>> LoginProfessorAsync(LoginModel model)
+        public async Task<ServiceResult<(ProfessorDTO, string, string)>> LoginProfessorAsync(LoginModel model)
         {
             var professor = await _professorRepository.GetProfessorByEmailAsync(model.Email);
             if (professor == null)
             {
-                return ServiceResult<(ProfessorDTO professor, string token)>.Failure("Professor not found.", 404);
+                return ServiceResult<(ProfessorDTO, string, string)>.Failure("Professor not found.", 404);
             }
 
             if (!_passwordHasher.VerifyPassword(professor.Password, model.Password))
             {
-                return ServiceResult<(ProfessorDTO professor, string token)>.Failure("Invalid password.", 401);
+                return ServiceResult<(ProfessorDTO, string, string)>.Failure("Invalid password.", 401);
             }
 
-            var token = _jwtTokenGenerator.GenerateJwtToken(professor, _configuration);
+            var accessToken = _tokenService.GenerateAccessToken(professor);
+            var refreshToken = _tokenService.GenerateRefreshToken(professor);
+
+            
+
             string? profilePhotoBase64String = professor.ProfilePicture != null
                 ? Convert.ToBase64String(professor.ProfilePicture)
                 : null;
@@ -101,7 +106,7 @@ namespace dotInstrukcijeBackend.Services
                 InstructionsCount = professor.InstructionsCount,
             };
 
-            return ServiceResult<(ProfessorDTO professor, string token)>.Success((professorDTO, token));
+            return ServiceResult<(ProfessorDTO, string, string)>.Success((professorDTO, accessToken, refreshToken));
         }
 
         public async Task<ServiceResult<ProfessorDTO>> FindProfessorByEmailAsync(string email)
