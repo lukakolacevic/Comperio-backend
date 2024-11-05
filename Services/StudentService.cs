@@ -1,4 +1,6 @@
-﻿using dotInstrukcijeBackend.DataTransferObjects;
+﻿using Azure.Core;
+using Azure;
+using dotInstrukcijeBackend.DataTransferObjects;
 using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Interfaces.ServiceInterfaces;
 using dotInstrukcijeBackend.Interfaces.Utility;
@@ -10,6 +12,11 @@ using dotInstrukcijeBackend.ServiceResultUtility;
 using dotInstrukcijeBackend.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace dotInstrukcijeBackend.Services
 {
@@ -18,26 +25,24 @@ namespace dotInstrukcijeBackend.Services
         private readonly IStudentRepository _studentRepository;
         private readonly ISubjectRepository _subjectRepository;
         private readonly IProfessorRepository _professorRepository;
-        private readonly IConfiguration _configuration;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IProfilePhotoSaver _profilePhotoSaver;
-        private readonly IJWTTokenGenerator _jwtTokenGenerator;
+        private readonly ITokenService _tokenService;
+        
 
         public StudentService(
         IStudentRepository studentRepository,
         ISubjectRepository subjectRepository,
-        IConfiguration configuration,
         IPasswordHasher passwordHasher,
         IProfilePhotoSaver profilePhotoSaver,
-        IJWTTokenGenerator jwtTokenGenerator,
+        ITokenService tokenService,
         IProfessorRepository professorRepository)
         {
             _studentRepository = studentRepository;
             _subjectRepository = subjectRepository;
-            _configuration = configuration;
             _passwordHasher = passwordHasher;
             _profilePhotoSaver = profilePhotoSaver;
-            _jwtTokenGenerator = jwtTokenGenerator;
+            _tokenService = tokenService;
             _professorRepository = professorRepository;
         }
 
@@ -63,27 +68,31 @@ namespace dotInstrukcijeBackend.Services
             return ServiceResult.Success();
         }
 
-        public async Task<ServiceResult<(StudentDTO student, string token)>> LoginStudentAsync(LoginModel model)
+        public async Task<ServiceResult<(StudentDTO, string, string)>> LoginStudentAsync(LoginModel model)
         {
             var student = await _studentRepository.GetStudentByEmailAsync(model.Email);
             if (student == null)
             {
-                return ServiceResult<(StudentDTO student, string token)>.Failure("Student not found.", 400);
+                return ServiceResult<(StudentDTO, string, string)>.Failure("Student not found.", 400);
             }
 
             if (!_passwordHasher.VerifyPassword(student.Password, model.Password))
             {
-                return ServiceResult<(StudentDTO student, string token)>.Failure("Invalid password.", 401);
+                return ServiceResult<(StudentDTO, string, string)>.Failure("Invalid password.", 401);
             }
 
-            var token = _jwtTokenGenerator.GenerateJwtToken(student, _configuration);
+            var accessToken = _tokenService.GenerateAccessToken(student);
+            var refreshToken = _tokenService.GenerateRefreshToken(student);
+
+            
+
             string? profilePhotoBase64String = student.ProfilePicture != null
                 ? Convert.ToBase64String(student.ProfilePicture)
                 : null;
 
             var studentDTO = new StudentDTO(student.Id, student.Name, student.Surname, profilePhotoBase64String);
 
-            return ServiceResult<(StudentDTO student, string token)>.Success((studentDTO, token));
+            return ServiceResult<(StudentDTO, string, string)>.Success((studentDTO, accessToken, refreshToken));
         }
 
         public async Task<ServiceResult<StudentDTO>> FindStudentByEmailAsync(string email)
