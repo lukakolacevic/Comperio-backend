@@ -50,5 +50,12 @@ namespace dotInstrukcijeBackend.Repositories
 
             return numberOfSessions < 5;
         }
+
+        public async Task<Student> GetStudentByIdAsync(int id)
+        {
+            const string query = @"SELECT * FROM student WHERE id = @Id";
+
+            return await _connection.QueryFirstOrDefaultAsync<Student>(query, new {Id = id});
+        }
     }
 }
