@@ -30,76 +30,14 @@ namespace dotInstrukcijeBackend.Controllers
     public class StudentController : ControllerBase
     {
         private readonly IStudentService _studentService;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        
 
-        public StudentController(IStudentService studentService, IHttpContextAccessor httpContextAccessor)
+        public StudentController(IStudentService studentService)
         { 
             _studentService = studentService;
-            _httpContextAccessor = httpContextAccessor;
         }
 
 
-        [HttpPost("register/student")]
-        public async Task<IActionResult> Register([FromForm] StudentRegistrationModel model)
-        {
-            // Validate the model state
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { success = false, message = "Invalid data provided." });
-            }
-
-            // Call the service method
-            var result = await _studentService.RegisterStudentAsync(model);
-
-            // Check the result and return appropriate response
-            if (!result.IsSuccess)
-            {
-                return StatusCode(result.StatusCode, new {success = result.IsSuccess, message = result.ErrorMessage});
-            }
-
-            // Return success response
-            return StatusCode(201, new { success = true, message = "Student registered successfully!" });
-        }
-
-
-        [HttpPost("login/student")]
-        public async Task<IActionResult> Login([FromBody] LoginModel model)
-        {
-            var result = await _studentService.LoginStudentAsync(model);
-
-            if (!result.IsSuccess)
-            {
-                return StatusCode(result.StatusCode, new {success = result.IsSuccess, message = result.ErrorMessage});
-            }
-            
-            var (student, accessToken, refreshToken) = result.Data;
-
-            _httpContextAccessor.HttpContext?.Response.Cookies.Append("accessToken", accessToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Lax,
-                Expires = DateTime.UtcNow.AddMinutes(15)
-            }); 
-
-            _httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Lax,
-                Expires = DateTime.UtcNow.AddDays(7)
-            });
-
-            return Ok(new
-            {
-                success = true,
-                student = student,
-                message = "Student logged in successfully."
-            });
-        }
-
-        
-        
         [Authorize]
         [HttpGet("student/{email}")]
         public async Task<IActionResult> GetStudentByEmail(string email)

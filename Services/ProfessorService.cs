@@ -38,7 +38,7 @@ namespace dotInstrukcijeBackend.Services
         }
 
 
-        public async Task<ServiceResult> RegisterProfessorAsync(ProfessorRegistrationModel model)
+        public async Task<ServiceResult> RegisterProfessorAsync(RegistrationModel model)
         {
             if (await _professorRepository.GetProfessorByEmailAsync(model.Email) != null)
             {
@@ -56,20 +56,20 @@ namespace dotInstrukcijeBackend.Services
 
             await _professorRepository.AddProfessorAsync(professor);
 
-            var prof = await _professorRepository.GetProfessorByEmailAsync(professor.Email);
-            int profId = prof.Id;
+            //var prof = await _professorRepository.GetProfessorByEmailAsync(professor.Email);
+            //int profId = prof.Id;
 
-            if (model.Subjects is not null)
-            {
-                foreach (var subjectURL in model.Subjects)
-                {
-                    var subjectDetails = await _subjectRepository.GetSubjectByURLAsync(subjectURL);
+            //if (model.Subjects is not null)
+            //{
+                //foreach (var subjectURL in model.Subjects)
+                //{
+                   // var subjectDetails = await _subjectRepository.GetSubjectByURLAsync(subjectURL);
 
-                    int subjectId = subjectDetails.Subject.Id;
+                    //int subjectId = subjectDetails.Subject.Id;
 
-                    await _professorRepository.AssociateProfessorWithSubjectAsync(profId, subjectId);
-                }
-            }
+                    //await _professorRepository.AssociateProfessorWithSubjectAsync(profId, subjectId);
+                //}
+            //}
 
             return ServiceResult.Success();
         }

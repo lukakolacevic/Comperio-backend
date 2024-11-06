@@ -46,7 +46,7 @@ namespace dotInstrukcijeBackend.Services
             _professorRepository = professorRepository;
         }
 
-        public async Task<ServiceResult> RegisterStudentAsync(StudentRegistrationModel model)
+        public async Task<ServiceResult> RegisterStudentAsync(RegistrationModel model)
         {
 
             if (await _studentRepository.GetStudentByEmailAsync(model.Email) != null)

@@ -7,7 +7,7 @@ namespace dotInstrukcijeBackend.Interfaces.Service
 {
     public interface IProfessorService
     {
-        Task<ServiceResult> RegisterProfessorAsync(ProfessorRegistrationModel model);
+        Task<ServiceResult> RegisterProfessorAsync(RegistrationModel model);
         Task<ServiceResult<(ProfessorDTO, string, string)>> LoginProfessorAsync(LoginModel model);
         Task<ServiceResult<ProfessorDTO>> FindProfessorByEmailAsync(string email);
         Task<ServiceResult<IEnumerable<Subject>>> FindAllSubjectsForProfessorAsync(int professorId);
