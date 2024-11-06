@@ -16,8 +16,7 @@ namespace dotInstrukcijeBackend.Repositories
 
         public async Task<Student> GetStudentByEmailAsync(string email)
         {
-            const string query = @"SELECT id, email, name, surname, password, profile_picture
-                                 FROM student WHERE email = @Email";
+            const string query = @"SELECT * FROM student WHERE email = @Email";
 
             return await _connection.QueryFirstOrDefaultAsync<Student>(query, new { Email = email });
         }
@@ -35,8 +34,7 @@ namespace dotInstrukcijeBackend.Repositories
 
         public async Task<IEnumerable<Student>> GetAllStudentsAsync()
         {
-            const string query = @"SELECT id, email, name, surname, password, profile_picture 
-                                 FROM student";
+            const string query = @"SELECT * FROM student;";
 
             return await _connection.QueryAsync<Student>(query);
         }
