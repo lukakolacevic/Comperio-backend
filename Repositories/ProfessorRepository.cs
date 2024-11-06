@@ -20,8 +20,7 @@ namespace dotInstrukcijeBackend.Repositories
 
         public async Task<Professor> GetProfessorByEmailAsync(string email)
         {
-            const string query = @"SELECT id, email, name, surname, password, profile_picture 
-                                 FROM professor WHERE email = @Email;";
+            const string query = @"SELECT * FROM professor WHERE email = @Email;";
 
 
             return await _connection.QueryFirstOrDefaultAsync<Professor>(query, new { Email = email });
@@ -48,8 +47,7 @@ namespace dotInstrukcijeBackend.Repositories
 
         public async Task<IEnumerable<Professor>> GetAllProfessorsAsync()
         {
-            const string query = @"SELECT id, email, name, surname, password, profile_picture, instructions_count
-                                 FROM professor;";
+            const string query = @"SELECT * FROM professor;";
 
             return await _connection.QueryAsync<Professor>(query);
         }
@@ -66,7 +64,7 @@ namespace dotInstrukcijeBackend.Repositories
 
         public async Task<IEnumerable<Professor>> GetTopFiveProfessorsByInstructionsCountAsync()
         {
-            const string query = @"SELECT id, email, name, surname, password, profile_picture, instructions_count FROM professor
+            const string query = @"SELECT * FROM professor
                                     ORDER BY instructions_count DESC LIMIT 5;";
 
             return await _connection.QueryAsync<Professor>(query);
