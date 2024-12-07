@@ -223,5 +223,13 @@ namespace dotInstrukcijeBackend.Services
 
             return ServiceResult.Success();
         }
+
+
+        public async Task<ServiceResult> ConfirmEmailAsync(int id)
+        {
+            await _professorRepository.SetEmailVerifiedAsync(id);
+
+            return ServiceResult.Success();
+        }
     }
 }

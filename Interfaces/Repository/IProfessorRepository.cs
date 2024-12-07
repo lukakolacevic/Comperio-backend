@@ -24,5 +24,6 @@ namespace dotInstrukcijeBackend.Interfaces.RepositoryInterfaces
         Task<bool> IsProfessorTeachingSubject(int professorId, int subjectId);
 
         Task<IEnumerable<ProfessorFrequencyDTO>> GetTopFiveRequestedProfessorsAsync(int studentId);
+        Task SetEmailVerifiedAsync(int id);
     }
 }

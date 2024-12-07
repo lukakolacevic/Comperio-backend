@@ -16,5 +16,6 @@ namespace dotInstrukcijeBackend.Interfaces.ServiceInterfaces
 
         Task<ServiceResult<IEnumerable<SubjectFrequencyDTO>>> FindTopFiveRequestedSubjectsAsync(int studentId);
         Task<ServiceResult<IEnumerable<ProfessorFrequencyDTO>>> FindTopFiveRequestedProfessorsAsync(int studentId);
+        Task<ServiceResult> ConfirmEmailAsync(int id);
     }
 }

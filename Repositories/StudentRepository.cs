@@ -55,5 +55,12 @@ namespace dotInstrukcijeBackend.Repositories
 
             return await _connection.QueryFirstOrDefaultAsync<Student>(query, new {Id = id});
         }
+
+        public async Task SetEmailVerifiedAsync(int id)
+        {
+            const string query = @"UPDATE student SET is_verified = TRUE WHERE id = @Id";
+
+            await _connection.ExecuteAsync(query, new { Id = id });
+        }
     }
 }

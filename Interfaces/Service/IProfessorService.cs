@@ -14,5 +14,7 @@ namespace dotInstrukcijeBackend.Interfaces.Service
         Task<ServiceResult<IEnumerable<ProfessorDTO>>> FindTopFiveProfessorsByInstructionsCountAsync();
         Task<ServiceResult> RemoveProfessorFromSubjectAsync(int professorid, int subjectId);
         Task<ServiceResult> JoinProfessorToSubject(int professorId, int subjectId);
+        Task<ServiceResult> ConfirmEmailAsync(int id);
+
     }
 }

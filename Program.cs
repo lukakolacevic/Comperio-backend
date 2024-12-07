@@ -22,6 +22,7 @@ using dotInstrukcijeBackend.ProfilePictureSavingUtility;
 using dotInstrukcijeBackend.JWTTokenUtility;
 using dotInstrukcijeBackend.Interfaces.Service;
 using Microsoft.AspNetCore.CookiePolicy;
+using Microsoft.AspNetCore.Identity;
 
 internal class Program
 {
@@ -40,6 +41,8 @@ internal class Program
         builder.Services.AddScoped<IDbConnection>(sp =>
             new NpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+        builder.Services.Configure<IdentityOptions>(options => options.SignIn.RequireConfirmedEmail = true);
+
         // Repository and service registrations
         builder.Services.AddScoped<IStudentRepository, StudentRepository>();
         builder.Services.AddScoped<IProfessorRepository, ProfessorRepository>();
@@ -54,6 +57,8 @@ internal class Program
         builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
         builder.Services.AddScoped<IProfilePhotoSaver, ProfilePhotoSaver>();
         builder.Services.AddScoped<ITokenService, TokenService>();
+
+        builder.Services.AddTransient<EmailService>();
 
         // Add CORS policy
         builder.Services.AddCors(options =>

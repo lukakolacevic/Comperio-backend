@@ -2,11 +2,17 @@
 using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Interfaces.Service;
 using dotInstrukcijeBackend.Interfaces.ServiceInterfaces;
+using dotInstrukcijeBackend.Interfaces.User;
 using dotInstrukcijeBackend.Interfaces.Utility;
 using dotInstrukcijeBackend.Models;
+using dotInstrukcijeBackend.Services;
 using dotInstrukcijeBackend.ViewModels;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using NuGet.Common;
+using NuGet.Versioning;
+using SendGrid.Helpers.Mail.Model;
 
 namespace dotInstrukcijeBackend.Controllers
 {
@@ -14,13 +20,15 @@ namespace dotInstrukcijeBackend.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
+        private readonly EmailService _emailService;
         private readonly IProfessorService _professorService;
         private readonly IStudentService _studentService;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ITokenService _tokenService;
        
-        public AuthController(ITokenService tokenService, IProfessorService professorService, IStudentService studentService, IHttpContextAccessor httpContextAccessor)
+        public AuthController(ITokenService tokenService, IProfessorService professorService, IStudentService studentService, IHttpContextAccessor httpContextAccessor, EmailService emailService)
         {
+            _emailService = emailService;
             _tokenService = tokenService;
             _httpContextAccessor = httpContextAccessor;
             _professorService = professorService;
@@ -35,32 +43,50 @@ namespace dotInstrukcijeBackend.Controllers
                 return BadRequest(new { success = false, message = "Invalid data provided." });
             }
 
+            IUser userToRegister = null; 
             if (user == "student")
             {
                 var result = await _studentService.RegisterStudentAsync(model);
-
+                
                 if (!result.IsSuccess)
                 {
                     return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
                 }
+
+                var student = _studentService.FindStudentByEmailAsync(model.Email);
+
+                var studentId = student.Id;
+                var token = _tokenService.GenerateEmailVerificationToken(studentId);
+
+                var confirmationLink = Url.Action(nameof(ConfirmEmail), "Auth", new { token, email = model.Email }, Request.Scheme);
+                await _emailService.SendEmailAsync(model.Email, "Potvrda email adrese", confirmationLink);
             }
 
             else if (user == "professor")
             {
-                // Call the service method
                 var result = await _professorService.RegisterProfessorAsync(model);
-
-                // Check the result and return appropriate response
+                
                 if (!result.IsSuccess)
                 {
                     return StatusCode(result.StatusCode, new { success = result.IsSuccess, message = result.ErrorMessage });
                 }
+
+                var professor = _professorService.FindProfessorByEmailAsync(model.Email);
+                var professorId = professor.Id;
+
+                var token = _tokenService.GenerateEmailVerificationToken(professorId);
+
+                var confirmationLink = Url.Action(nameof(ConfirmEmail), "Auth", new { token, email = model.Email }, Request.Scheme);
+                await _emailService.SendEmailAsync(model.Email, "Potvrda email adrese", confirmationLink);
             }
 
             else
             {
                 return BadRequest(new { success = false, message = "Invalid data provided." });
             }
+
+            //var token = _tokenService.GenerateEmailVerificationToken(student.StudentId);
+            //var confirmationLink = Url.Action(nameof("confirm-email"), "Auth", new {token, email = student.})
 
             return StatusCode(201, new { success = true, message = $"{user} registered successfully." });
         }
@@ -101,6 +127,7 @@ namespace dotInstrukcijeBackend.Controllers
                     Expires = DateTime.UtcNow.AddDays(7)
                 });
 
+                
                 return Ok(new
                 {
                     success = true,
@@ -156,8 +183,56 @@ namespace dotInstrukcijeBackend.Controllers
             });
         }
 
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail(string token, string email)
+        {
+            var student_result = await _studentService.FindStudentByEmailAsync(email);
+            var professor_result = await _professorService.FindProfessorByEmailAsync(email); //dovrsi ovo, zovi metodu za token gore, nek se posalje mail
 
-        [HttpPost("refresh-token")]
+            if (!student_result.IsSuccess && !professor_result.IsSuccess)
+            {
+                return BadRequest(new { success = false, message = "User not found." });
+            }
+
+            if (student_result.IsSuccess)
+            {
+                await _studentService.ConfirmEmailAsync(student_result.Data.StudentId);
+                return Redirect("http://localhost:5173/confirm-email-success");
+            }
+
+            if (professor_result.IsSuccess)
+            {   
+                await _professorService.ConfirmEmailAsync(professor_result.Data.ProfessorId);
+                return Redirect("http://localhost:5173/confirm-email-success");
+            }
+
+            return BadRequest(new { success = false, message = "Could not confirm user email." });
+        }
+
+        [HttpPost("resend-confirmation-email")]
+        public async Task<IActionResult> ResendConfirmationEmail([FromBody] string email)
+        { 
+            var student = await _studentService.FindStudentByEmailAsync(email);
+            var professor = await _professorService.FindProfessorByEmailAsync(email);
+            var token = student == null ? _tokenService.GenerateEmailVerificationToken(professor.Data.ProfessorId) : _tokenService.GenerateEmailVerificationToken(student.Data.StudentId);
+
+            var confirmationLink = Url.Action(nameof(ConfirmEmail), "Auth", new { token, email = email }, Request.Scheme);
+
+            if (student != null)
+            {
+                await _emailService.SendEmailAsync(professor.Data.Email, "Potvrda email adrese", confirmationLink);
+                return Ok(new { success = true, message = "Confirmation email resent successfully." });
+            }
+            else if (professor != null)
+            {
+                await _emailService.SendEmailAsync(email, "Potvrda email adrese", confirmationLink);
+                return Ok(new { success = true, message = "Confirmation email resent successfully." });
+            }
+
+            return BadRequest(new { success = false, message = "User not found." });
+        }
+
+        [HttpGet("refresh-token")]
         public async Task<IActionResult> RefreshToken()
         {
             var oldRefreshToken = Request.Cookies["refreshToken"];
@@ -178,16 +253,16 @@ namespace dotInstrukcijeBackend.Controllers
             Response.Cookies.Append("accessToken", newAccessToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,                 
-                SameSite = SameSiteMode.Strict,
+                Secure = false,                 
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddMinutes(15) 
             });
 
             Response.Cookies.Append("refreshToken", newRefreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,                 
-                SameSite = SameSiteMode.Strict,
+                Secure = false,                 
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddDays(7) 
             });
 

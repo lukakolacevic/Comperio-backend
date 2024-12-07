@@ -9,6 +9,7 @@ namespace dotInstrukcijeBackend.Interfaces.Utility
         string GenerateAccessToken(IUser user);
         string GenerateRefreshToken(IUser user);
         Task<ServiceResult<(string, string)>> RefreshToken(string oldRefreshToken);
+        string GenerateEmailVerificationToken(int userId);
     }
 
 }

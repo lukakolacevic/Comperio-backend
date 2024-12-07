@@ -1,5 +1,6 @@
 using dotInstrukcijeBackend.Interfaces.User;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace dotInstrukcijeBackend.Models
 {
@@ -10,6 +11,8 @@ namespace dotInstrukcijeBackend.Models
         public String Email { get; set; }
         public String Name { get; set; }
         public String Surname { get; set; }
+        
+        [JsonIgnore]
         public String Password { get; set; }
         public byte[]? ProfilePicture { get; set; }
         public int InstructionsCount { get; set; }

@@ -132,5 +132,12 @@ namespace dotInstrukcijeBackend.Repositories
 
             return listOfMostChosenProfessors;
         }
+
+        public async Task SetEmailVerifiedAsync(int id)
+        {
+            const string query = @"UPDATE professor SET is_verified = TRUE WHERE id = @Id";
+
+            await _connection.ExecuteAsync(query, new { Id = id});
+        }
     }
 }

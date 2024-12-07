@@ -143,7 +143,12 @@ namespace dotInstrukcijeBackend.Services
             return ServiceResult<IEnumerable<ProfessorFrequencyDTO>>.Success(listOfMostChosenProfessors);
         }
 
+        public async Task<ServiceResult> ConfirmEmailAsync(int id)
+        {
+            await _studentRepository.SetEmailVerifiedAsync(id);
 
+            return ServiceResult.Success();
+        }
     }
 }
     

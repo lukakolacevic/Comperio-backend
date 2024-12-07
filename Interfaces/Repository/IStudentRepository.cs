@@ -12,5 +12,6 @@ namespace dotInstrukcijeBackend.Interfaces.RepositoryInterfaces
 
         Task<bool> CanScheduleMoreSessionsAsync(int studentId);
         Task<Student> GetStudentByIdAsync(int id);
+        Task SetEmailVerifiedAsync(int id);
     }
 }
