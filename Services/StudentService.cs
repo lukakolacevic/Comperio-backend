@@ -1,6 +1,5 @@
 ﻿using Azure.Core;
 using Azure;
-using dotInstrukcijeBackend.DataTransferObjects;
 using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Interfaces.ServiceInterfaces;
 using dotInstrukcijeBackend.Interfaces.Utility;
@@ -17,6 +16,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using dotInstrukcijeBackend.DataTransferObjects;
 
 namespace dotInstrukcijeBackend.Services
 {
@@ -28,15 +28,14 @@ namespace dotInstrukcijeBackend.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IProfilePhotoSaver _profilePhotoSaver;
         private readonly ITokenService _tokenService;
-        
 
         public StudentService(
-        IStudentRepository studentRepository,
-        ISubjectRepository subjectRepository,
-        IPasswordHasher passwordHasher,
-        IProfilePhotoSaver profilePhotoSaver,
-        ITokenService tokenService,
-        IProfessorRepository professorRepository)
+            IStudentRepository studentRepository,
+            ISubjectRepository subjectRepository,
+            IPasswordHasher passwordHasher,
+            IProfilePhotoSaver profilePhotoSaver,
+            ITokenService tokenService,
+            IProfessorRepository professorRepository)
         {
             _studentRepository = studentRepository;
             _subjectRepository = subjectRepository;
@@ -48,7 +47,6 @@ namespace dotInstrukcijeBackend.Services
 
         public async Task<ServiceResult> RegisterStudentAsync(RegistrationModel model)
         {
-
             if (await _studentRepository.GetStudentByEmailAsync(model.Email) != null)
             {
                 return ServiceResult.Failure("Email is already in use.", 400);
@@ -68,88 +66,99 @@ namespace dotInstrukcijeBackend.Services
             return ServiceResult.Success();
         }
 
-        public async Task<ServiceResult<(StudentDTO, string, string)>> LoginStudentAsync(LoginModel model)
+        public async Task<ServiceResult<(Student, string, string)>> LoginStudentAsync(LoginModel model)
         {
             var student = await _studentRepository.GetStudentByEmailAsync(model.Email);
             if (student == null)
             {
-                return ServiceResult<(StudentDTO, string, string)>.Failure("Student not found.", 400);
+                return ServiceResult<(Student, string, string)>.Failure("Student not found.", 400);
             }
 
             if (!_passwordHasher.VerifyPassword(student.Password, model.Password))
             {
-                return ServiceResult<(StudentDTO, string, string)>.Failure("Invalid password.", 401);
+                return ServiceResult<(Student, string, string)>.Failure("Invalid password.", 401);
             }
 
             var accessToken = _tokenService.GenerateAccessToken(student);
             var refreshToken = _tokenService.GenerateRefreshToken(student);
 
-            
+            // Previously we used StudentDTO and a base64 string for the profile picture. Now we directly return the Student model.
+            // We'll no longer use the base64 string, as we're not changing logic beyond class replacement.
+            var studentObj = new Student
+            {
+                Id = student.Id,
+                Email = student.Email,
+                Name = student.Name,
+                Surname = student.Surname,
+                Password = student.Password,
+                ProfilePicture = student.ProfilePicture
+            };
 
-            string? profilePhotoBase64String = student.ProfilePicture != null
-                ? Convert.ToBase64String(student.ProfilePicture)
-                : null;
-
-            var studentDTO = new StudentDTO(student.Id, student.Name, student.Surname, profilePhotoBase64String);
-
-            return ServiceResult<(StudentDTO, string, string)>.Success((studentDTO, accessToken, refreshToken));
+            return ServiceResult<(Student, string, string)>.Success((studentObj, accessToken, refreshToken));
         }
 
-        public async Task<ServiceResult<StudentDTO>> FindStudentByEmailAsync(string email)
+        public async Task<ServiceResult<Student>> FindStudentByEmailAsync(string email)
         {
             var student = await _studentRepository.GetStudentByEmailAsync(email);
 
             if (student == null)
             {
-                return ServiceResult<StudentDTO>.Failure("Student not found.", 404);
+                return ServiceResult<Student>.Failure("Student not found.", 404);
             }
 
-            string? profilePhotoBase64String = student.ProfilePicture != null
-            ? Convert.ToBase64String(student.ProfilePicture)
-            : null;
+            // Previously returned a StudentDTO with a base64 string. Now we return the Student model directly.
+            var studentObj = new Student
+            {
+                Id = student.Id,
+                Email = student.Email,
+                Name = student.Name,
+                Surname = student.Surname,
+                Password = student.Password,
+                ProfilePicture = student.ProfilePicture
+            };
 
-            var studentDTO = new StudentDTO(student.Id, student.Name, student.Surname, profilePhotoBase64String);
-
-            return ServiceResult<StudentDTO>.Success(studentDTO);
+            return ServiceResult<Student>.Success(studentObj);
         }
 
-        public async Task<ServiceResult<IEnumerable<StudentDTO>>> FindAllStudentsAsync()
+        public async Task<ServiceResult<IEnumerable<Student>>> FindAllStudentsAsync()
         {
             var listOfStudents = await _studentRepository.GetAllStudentsAsync();
 
-            var listOfStudentsDTO = new List<StudentDTO>();
+            var listOfStudentsModels = new List<Student>();
 
             foreach (var student in listOfStudents)
             {
-                String profilePhotoBase64String = student.ProfilePicture is not null ? Convert.ToBase64String(student.ProfilePicture) : null;
-                var studentDTO = new StudentDTO(student.Id, student.Name, student.Surname, profilePhotoBase64String);
-                listOfStudentsDTO.Add(studentDTO);
+                var studentObj = new Student
+                {
+                    Id = student.Id,
+                    Email = student.Email,
+                    Name = student.Name,
+                    Surname = student.Surname,
+                    Password = student.Password,
+                    ProfilePicture = student.ProfilePicture
+                };
+                listOfStudentsModels.Add(studentObj);
             }
 
-            return ServiceResult<IEnumerable<StudentDTO>>.Success(listOfStudentsDTO);
+            return ServiceResult<IEnumerable<Student>>.Success(listOfStudentsModels);
         }
 
         public async Task<ServiceResult<IEnumerable<SubjectFrequencyDTO>>> FindTopFiveRequestedSubjectsAsync(int studentId)
         {
             var listOfMostChosenSubjects = await _subjectRepository.GetTopFiveRequestedSubjectsAsync(studentId);
-
             return ServiceResult<IEnumerable<SubjectFrequencyDTO>>.Success(listOfMostChosenSubjects);
         }
 
         public async Task<ServiceResult<IEnumerable<ProfessorFrequencyDTO>>> FindTopFiveRequestedProfessorsAsync(int studentId)
         {
             var listOfMostChosenProfessors = await _professorRepository.GetTopFiveRequestedProfessorsAsync(studentId);
-
             return ServiceResult<IEnumerable<ProfessorFrequencyDTO>>.Success(listOfMostChosenProfessors);
         }
 
         public async Task<ServiceResult> ConfirmEmailAsync(int id)
         {
             await _studentRepository.SetEmailVerifiedAsync(id);
-
             return ServiceResult.Success();
         }
     }
 }
-    
-

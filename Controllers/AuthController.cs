@@ -196,13 +196,13 @@ namespace dotInstrukcijeBackend.Controllers
 
             if (student_result.IsSuccess)
             {
-                await _studentService.ConfirmEmailAsync(student_result.Data.StudentId);
+                await _studentService.ConfirmEmailAsync(student_result.Data.Id);
                 return Redirect("http://localhost:5173/confirm-email-success");
             }
 
             if (professor_result.IsSuccess)
             {   
-                await _professorService.ConfirmEmailAsync(professor_result.Data.ProfessorId);
+                await _professorService.ConfirmEmailAsync(professor_result.Data.Id);
                 return Redirect("http://localhost:5173/confirm-email-success");
             }
 
@@ -214,13 +214,13 @@ namespace dotInstrukcijeBackend.Controllers
         { 
             var student = await _studentService.FindStudentByEmailAsync(email);
             var professor = await _professorService.FindProfessorByEmailAsync(email);
-            var token = student == null ? _tokenService.GenerateEmailVerificationToken(professor.Data.ProfessorId) : _tokenService.GenerateEmailVerificationToken(student.Data.StudentId);
+            var token = student == null ? _tokenService.GenerateEmailVerificationToken(professor.Data.Id) : _tokenService.GenerateEmailVerificationToken(student.Data.Id);
 
             var confirmationLink = Url.Action(nameof(ConfirmEmail), "Auth", new { token, email = email }, Request.Scheme);
 
             if (student != null)
             {
-                await _emailService.SendEmailAsync(professor.Data.Email, "Potvrda email adrese", confirmationLink);
+                await _emailService.SendEmailAsync(student.Data.Email, "Potvrda email adrese", confirmationLink);
                 return Ok(new { success = true, message = "Confirmation email resent successfully." });
             }
             else if (professor != null)

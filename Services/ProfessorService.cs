@@ -1,5 +1,4 @@
-﻿using dotInstrukcijeBackend.DataTransferObjects;
-using dotInstrukcijeBackend.HelperFunctions;
+﻿using dotInstrukcijeBackend.HelperFunctions;
 using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Interfaces.Service;
 using dotInstrukcijeBackend.Interfaces.Utility;
@@ -19,7 +18,6 @@ namespace dotInstrukcijeBackend.Services
         private readonly ITokenService _tokenService;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-
         public ProfessorService(
             IProfessorRepository professorRepository,
             ISubjectRepository subjectRepository,
@@ -34,9 +32,8 @@ namespace dotInstrukcijeBackend.Services
             _passwordHasher = passwordHasher;
             _profilePhotoSaver = profilePhotoSaver;
             _tokenService = tokenService;
-            _httpContextAccessor = httpContextAccessor; 
+            _httpContextAccessor = httpContextAccessor;
         }
-
 
         public async Task<ServiceResult> RegisterProfessorAsync(RegistrationModel model)
         {
@@ -55,84 +52,40 @@ namespace dotInstrukcijeBackend.Services
             };
 
             await _professorRepository.AddProfessorAsync(professor);
-
-            //var prof = await _professorRepository.GetProfessorByEmailAsync(professor.Email);
-            //int profId = prof.Id;
-
-            //if (model.Subjects is not null)
-            //{
-                //foreach (var subjectURL in model.Subjects)
-                //{
-                   // var subjectDetails = await _subjectRepository.GetSubjectByURLAsync(subjectURL);
-
-                    //int subjectId = subjectDetails.Subject.Id;
-
-                    //await _professorRepository.AssociateProfessorWithSubjectAsync(profId, subjectId);
-                //}
-            //}
-
             return ServiceResult.Success();
         }
 
-
-        public async Task<ServiceResult<(ProfessorDTO, string, string)>> LoginProfessorAsync(LoginModel model)
+        public async Task<ServiceResult<(Professor, string, string)>> LoginProfessorAsync(LoginModel model)
         {
             var professor = await _professorRepository.GetProfessorByEmailAsync(model.Email);
             if (professor == null)
             {
-                return ServiceResult<(ProfessorDTO, string, string)>.Failure("Professor not found.", 404);
+                return ServiceResult<(Professor, string, string)>.Failure("Professor not found.", 404);
             }
 
             if (!_passwordHasher.VerifyPassword(professor.Password, model.Password))
             {
-                return ServiceResult<(ProfessorDTO, string, string)>.Failure("Invalid password.", 401);
+                return ServiceResult<(Professor, string, string)>.Failure("Invalid password.", 401);
             }
 
             var accessToken = _tokenService.GenerateAccessToken(professor);
             var refreshToken = _tokenService.GenerateRefreshToken(professor);
 
-            
-
-            string? profilePhotoBase64String = professor.ProfilePicture != null
-                ? Convert.ToBase64String(professor.ProfilePicture)
-                : null;
-
-            var professorDTO = new ProfessorDTO
-            {
-                ProfessorId = professor.Id,
-                Name = professor.Name,
-                Surname = professor.Surname,
-                ProfilePictureBase64String = profilePhotoBase64String,
-                InstructionsCount = professor.InstructionsCount,
-            };
-
-            return ServiceResult<(ProfessorDTO, string, string)>.Success((professorDTO, accessToken, refreshToken));
+            // Return the professor object directly.
+            return ServiceResult<(Professor, string, string)>.Success((professor, accessToken, refreshToken));
         }
 
-        public async Task<ServiceResult<ProfessorDTO>> FindProfessorByEmailAsync(string email)
+        public async Task<ServiceResult<Professor>> FindProfessorByEmailAsync(string email)
         {
             var professor = await _professorRepository.GetProfessorByEmailAsync(email);
             if (professor == null)
             {
-                return ServiceResult<ProfessorDTO>.Failure("Professor not found.", 404);
+                return ServiceResult<Professor>.Failure("Professor not found.", 404);
             }
 
-            string? profilePhotoBase64String = professor.ProfilePicture != null
-                ? Convert.ToBase64String(professor.ProfilePicture)
-                : null;
-
-            var professorDTO = new ProfessorDTO
-            {
-                ProfessorId = professor.Id,
-                Name = professor.Name,
-                Surname = professor.Surname,
-                ProfilePictureBase64String = profilePhotoBase64String,
-                InstructionsCount = professor.InstructionsCount,
-            };
-
-            return ServiceResult<ProfessorDTO>.Success(professorDTO);
+            // Return the professor object directly.
+            return ServiceResult<Professor>.Success(professor);
         }
-
 
         public async Task<ServiceResult<IEnumerable<Subject>>> FindAllSubjectsForProfessorAsync(int professorId)
         {
@@ -140,40 +93,19 @@ namespace dotInstrukcijeBackend.Services
             return ServiceResult<IEnumerable<Subject>>.Success(subjects);
         }
 
-        public async Task<ServiceResult<IEnumerable<ProfessorDTO>>> FindAllProfessorsAsync()
+        public async Task<ServiceResult<IEnumerable<Professor>>> FindAllProfessorsAsync()
         {
             var professors = await _professorRepository.GetAllProfessorsAsync();
-            var professorDTOs = professors.Select(professor => new ProfessorDTO
-            {
-                ProfessorId = professor.Id,
-                Name = professor.Name,
-                Surname = professor.Surname,
-                ProfilePictureBase64String = professor.ProfilePicture != null
-                ? Convert.ToBase64String(professor.ProfilePicture)
-                : null,
-                InstructionsCount = professor.InstructionsCount
-            }
-            );
-
-            return ServiceResult<IEnumerable<ProfessorDTO>>.Success(professorDTOs);
+            // Return the professors list directly.
+            return ServiceResult<IEnumerable<Professor>>.Success(professors);
         }
 
-
-        public async Task<ServiceResult<IEnumerable<ProfessorDTO>>> FindTopFiveProfessorsByInstructionsCountAsync()
+        public async Task<ServiceResult<IEnumerable<Professor>>> FindTopFiveProfessorsByInstructionsCountAsync()
         {
             var listOfProfessors = await _professorRepository.GetTopFiveProfessorsByInstructionsCountAsync();
-
-            var listOfProfessorsDTO = new List<ProfessorDTO>();
-
-            foreach (var professor in listOfProfessors)
-            {
-                var professorDTO = MapToProfessorDTO.mapToProfessorDTO(professor);
-                listOfProfessorsDTO.Add(professorDTO);
-            }
-
-            return ServiceResult<IEnumerable<ProfessorDTO>>.Success(listOfProfessorsDTO);
+            // Return the professors list directly.
+            return ServiceResult<IEnumerable<Professor>>.Success(listOfProfessors);
         }
-
 
         public async Task<ServiceResult> RemoveProfessorFromSubjectAsync(int professorid, int subjectId)
         {
@@ -195,10 +127,8 @@ namespace dotInstrukcijeBackend.Services
             }
 
             await _professorRepository.DeleteProfessorFromSubjectAsync(professorid, subjectId);
-
             return ServiceResult.Success();
         }
-
 
         public async Task<ServiceResult> JoinProfessorToSubject(int professorId, int subjectId)
         {
@@ -220,15 +150,12 @@ namespace dotInstrukcijeBackend.Services
             }
 
             await _professorRepository.AssociateProfessorWithSubjectAsync(professorId, subjectId);
-
             return ServiceResult.Success();
         }
-
 
         public async Task<ServiceResult> ConfirmEmailAsync(int id)
         {
             await _professorRepository.SetEmailVerifiedAsync(id);
-
             return ServiceResult.Success();
         }
     }

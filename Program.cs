@@ -23,6 +23,7 @@ using dotInstrukcijeBackend.JWTTokenUtility;
 using dotInstrukcijeBackend.Interfaces.Service;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
+using System.Text.Json.Serialization;
 
 internal class Program
 {
@@ -76,6 +77,8 @@ internal class Program
         builder.Services.AddControllers().AddJsonOptions(options =>
         {
             options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            // Add the ByteArrayToBase64Converter to automatically convert byte[] to Base64
+            options.JsonSerializerOptions.Converters.Add(new ByteArrayToBase64Converter());
         });
 
         // Configure Swagger
