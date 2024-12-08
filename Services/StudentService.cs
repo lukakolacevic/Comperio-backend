@@ -58,7 +58,10 @@ namespace dotInstrukcijeBackend.Services
                 Name = model.Name,
                 Surname = model.Surname,
                 Password = _passwordHasher.HashPassword(model.Password),
-                ProfilePicture = await _profilePhotoSaver.SaveProfilePictureAsync(model.ProfilePicture)
+                ProfilePicture = await _profilePhotoSaver.SaveProfilePictureAsync(model.ProfilePicture),
+                OAuthId = null,
+                CreatedAt = DateTime.UtcNow,
+                IsVerified = false
             };
 
             await _studentRepository.AddStudentAsync(student);
@@ -91,7 +94,10 @@ namespace dotInstrukcijeBackend.Services
                 Name = student.Name,
                 Surname = student.Surname,
                 Password = student.Password,
-                ProfilePicture = student.ProfilePicture
+                ProfilePicture = student.ProfilePicture,
+                OAuthId = student.OAuthId,
+                CreatedAt = student.CreatedAt,
+                IsVerified = student.IsVerified
             };
 
             return ServiceResult<(Student, string, string)>.Success((studentObj, accessToken, refreshToken));
