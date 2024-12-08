@@ -17,7 +17,7 @@ namespace dotInstrukcijeBackend.Models
 
         [JsonConverter(typeof(ByteArrayToBase64Converter))]
         public byte[]? ProfilePicture { get; set; }
-        public int OAuthId { get; set; }
+        public int? OAuthId { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool IsVerified { get; set; }
         public string Role => "Student";
