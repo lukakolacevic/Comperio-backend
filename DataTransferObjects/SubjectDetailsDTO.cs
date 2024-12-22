@@ -6,6 +6,6 @@ namespace dotInstrukcijeBackend.DataTransferObjects
     {
         public Subject Subject { get; set; }
 
-        public IEnumerable<Professor> SubjectProfessors { get; set; }
+        public IEnumerable<User> SubjectInstructors { get; set; }
     }
 }

@@ -10,7 +10,7 @@ using dotInstrukcijeBackend.Models;
 using Microsoft.AspNetCore.Authorization;
 using dotInstrukcijeBackend.ViewModels;
 using dotInstrukcijeBackend.DataTransferObjects;
-using dotInstrukcijeBackend.HelperFunctions;
+//using dotInstrukcijeBackend.HelperFunctions;
 using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Interfaces.Service;
 
@@ -25,7 +25,7 @@ namespace dotInstrukcijeBackend.Controllers
             _subjectService = subjectService;
         }
         
-        [Authorize(Roles = "Professor")]
+        [Authorize(Roles = "2")]
         [HttpPost("subjects")]
         public async Task<IActionResult> CreateSubject([FromBody] SubjectRegistrationModel request)
         {
@@ -62,7 +62,7 @@ namespace dotInstrukcijeBackend.Controllers
             {
                 success = true,
                 subject = result.Data.subject,
-                professors = result.Data.professors,
+                instructors = result.Data.instructors,
                 message = "Subject and associated professors retrieved successfully."
             });
         }
@@ -76,10 +76,10 @@ namespace dotInstrukcijeBackend.Controllers
             return Ok(new { success = true, subjects = result.Data });
         }
 
-        [HttpGet("professors/{professorId}/subjects")]
-        public async Task<IActionResult> GetAllSubjectsForProfessor(int professorId)
+        [HttpGet("instructors/{instructorId}/subjects")]
+        public async Task<IActionResult> GetAllSubjectsForInstructor(int instructorId)
         {
-            var result = await _subjectService.FindAllSubjectsForProfessorAsync(professorId);
+            var result = await _subjectService.FindAllSubjectsForInstructorAsync(instructorId);
 
             return Ok(new { success = true, subjects = result.Data });
         }

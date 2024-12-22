@@ -1,6 +1,6 @@
 ﻿namespace dotInstrukcijeBackend.DataTransferObjects
 {
-    public class ProfessorFrequencyDTO
+    public class InstructorFrequencyDTO
     {
         public string Name { get; set; }
         public string Surname { get; set; }

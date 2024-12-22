@@ -18,303 +18,52 @@ namespace dotInstrukcijeBackend.Repositories
 
         public async Task AddSessionAysnc(Session session)
         {
-            const string query = @"INSERT INTO session (student_id, professor_id, subject_id, date_time, status) 
+            const string query = @"INSERT INTO session (StudentId, InstructorId, SubjectId, DateTime, Status) 
                                   VALUES(@StudentId, @ProfessorId, @SubjectId, @DateTime, @Status)";
 
             await _connection.ExecuteAsync(query, new
             {
                 StudentId = session.StudentId,
-                ProfessorId = session.ProfessorId,
+                ProfessorId = session.InstructorId,
                 SubjectId = session.SubjectId,
                 DateTime = session.DateTime,
                 Status = session.Status
             });
         }
 
-        public async Task<SessionsDTO<SessionWithProfessorDTO>> GetAllStudentSessionsAsync(int studentId)
+        public async Task<SessionsDTO<SessionWithUserDTO>> GetAllStudentSessionsAsync(int studentId)
         {
-            const string query = @"
-    -- Pending sessions
-    SELECT session.id AS ""id"", session.date_time, status, 
-           professor.id AS ""id"", name, surname, profile_picture, instructions_count,
-           subject.id AS ""id"", title     
-    FROM session
-    JOIN professor ON session.professor_id = professor.id
-    JOIN subject ON session.subject_id = subject.id
-    WHERE session.student_id = @StudentId AND session.status = 'Pending' AND session.date_time > CURRENT_TIMESTAMP;
-
-    -- Upcoming sessions
-    SELECT session.id AS ""id"", session.date_time, status, 
-           professor.id AS ""id"", name, surname, profile_picture, instructions_count,
-           subject.id AS ""id"", title     
-    FROM session
-    JOIN professor ON session.professor_id = professor.id
-    JOIN subject ON session.subject_id = subject.id
-    WHERE session.student_id = @StudentId AND session.status = 'Confirmed' AND session.date_time > CURRENT_TIMESTAMP;
-
-    -- Past sessions
-    SELECT session.id AS ""id"", session.date_time, status, 
-           professor.id AS ""id"", name, surname, profile_picture, instructions_count,
-           subject.id AS ""id"", title     
-    FROM session
-    JOIN professor ON session.professor_id = professor.id
-    JOIN subject ON session.subject_id = subject.id
-    WHERE session.student_id = @StudentId AND session.status = 'Confirmed' AND session.date_time <= CURRENT_TIMESTAMP;
-
-    --Cancelled sessions
-    SELECT session.id AS ""id"", session.date_time, status, 
-           professor.id AS ""id"", name, surname, profile_picture, instructions_count,
-           subject.id AS ""id"", title     
-    FROM session
-    JOIN professor ON session.professor_id = professor.id
-    JOIN subject ON session.subject_id = subject.id
-    WHERE session.student_id = @StudentId AND session.status = 'Cancelled'";
-
-            using (var multi = await _connection.QueryMultipleAsync(query, new { StudentId = studentId }))
+            using (var multi = await _connection.QueryMultipleAsync("GetAllSessionsForStudent", new { StudentId = studentId }, commandType: CommandType.StoredProcedure))
             {
-                // Pending sessions
-                var pendingSessions = multi.Read<Session, Professor, Subject, SessionWithProfessorDTO>((session, professor, subject) =>
-                {
-                    return new SessionWithProfessorDTO
-                    {
-                        SessionId = session.Id,
-                        DateTime = session.DateTime,
-                        Status = session.Status,
-                        Professor = new Professor
-                        {
-                            Id = professor.Id,
-                            Name = professor.Name,
-                            Surname = professor.Surname,
-                            ProfilePicture = professor.ProfilePicture,
-                            InstructionsCount = professor.InstructionsCount
-                        },
-                        Subject = new Subject
-                        {
-                            Id = subject.Id,
-                            Title = subject.Title
-                        }
-                    };
-                }, splitOn: "id,id").ToList();
+                var pendingSessions = MapSessionResults(multi);
+                var upcomingSessions = MapSessionResults(multi);
+                var pastSessions = MapSessionResults(multi);
+                var cancelledSessions = MapSessionResults(multi);
 
-                // Upcoming sessions
-                var upcomingSessions = multi.Read<Session, Professor, Subject, SessionWithProfessorDTO>((session, professor, subject) =>
+                return new SessionsDTO<SessionWithUserDTO>
                 {
-                    return new SessionWithProfessorDTO
-                    {
-                        SessionId = session.Id,
-                        DateTime = session.DateTime,
-                        Status = session.Status,
-                        Professor = new Professor
-                        {
-                            Id = professor.Id,
-                            Name = professor.Name,
-                            Surname = professor.Surname,
-                            ProfilePicture = professor.ProfilePicture,
-                            InstructionsCount = professor.InstructionsCount
-                        },
-                        Subject = new Subject
-                        {
-                            Id = subject.Id,
-                            Title = subject.Title
-                        }
-                    };
-                }, splitOn: "id,id").ToList();
-
-                // Past sessions
-                var pastSessions = multi.Read<Session, Professor, Subject, SessionWithProfessorDTO>((session, professor, subject) =>
-                {
-                    return new SessionWithProfessorDTO
-                    {
-                        SessionId = session.Id,
-                        DateTime = session.DateTime,
-                        Status = session.Status,
-                        Professor = new Professor
-                        {
-                            Id = professor.Id,
-                            Name = professor.Name,
-                            Surname = professor.Surname,
-                            ProfilePicture = professor.ProfilePicture,
-                            InstructionsCount = professor.InstructionsCount
-                        },
-                        Subject = new Subject
-                        {
-                            Id = subject.Id,
-                            Title = subject.Title
-                        }
-                    };
-                }, splitOn: "id,id").ToList();
-
-                var cancelledSessions = multi.Read<Session, Professor, Subject, SessionWithProfessorDTO>((session, professor, subject) =>
-                {
-                    return new SessionWithProfessorDTO
-                    {
-                        SessionId = session.Id,
-                        DateTime = session.DateTime,
-                        Status = session.Status,
-                        Professor = new Professor
-                        {
-                            Id = professor.Id,
-                            Name = professor.Name,
-                            Surname = professor.Surname,
-                            ProfilePicture = professor.ProfilePicture,
-                            InstructionsCount = professor.InstructionsCount
-                        },
-                        Subject = new Subject
-                        {
-                            Id = subject.Id,
-                            Title = subject.Title
-                        }
-                    };
-                }, splitOn: "id,id").ToList();
-
-                return new SessionsDTO<SessionWithProfessorDTO>
-                {
-                    PastSessions = pastSessions,
                     PendingSessions = pendingSessions,
                     UpcomingSessions = upcomingSessions,
+                    PastSessions = pastSessions,
                     CancelledSessions = cancelledSessions
                 };
             }
         }
 
-        public async Task<SessionsDTO<SessionWithStudentDTO>> GetAllSessionsForProfessorAsync(int professorId)
+        public async Task<SessionsDTO<SessionWithUserDTO>> GetAllInstructorSessionsAsync(int instructorId)
         {
-            const string query = @"
-        --Past sessions
-        SELECT session.id, date_time, status, student.id, student.name, student.surname, student.profile_picture, subject.id, title
-        FROM session 
-        JOIN student ON session.student_id = student.id 
-        JOIN professor ON session.professor_id = professor.id 
-        JOIN subject ON subject.id = session.subject_id
-        WHERE session.professor_id = @ProfessorId AND session.status = 'Confirmed' AND session.date_time <= CURRENT_TIMESTAMP;
-        
-        --Pending sessions
-        SELECT session.id, date_time, status, student.id, student.name, student.surname, student.profile_picture, subject.id, title
-        FROM session 
-        JOIN student ON session.student_id = student.id 
-        JOIN professor ON session.professor_id = professor.id 
-        JOIN subject ON subject.id = session.subject_id
-        WHERE session.professor_id = @ProfessorId AND session.status = 'Pending' AND session.date_time > CURRENT_TIMESTAMP;
-
-        --Upcoming confirmed sessions
-        SELECT session.id, date_time, status, student.id, student.name, student.surname, student.profile_picture, subject.id, title
-        FROM session 
-        JOIN student ON session.student_id = student.id 
-        JOIN professor ON session.professor_id = professor.id 
-        JOIN subject ON subject.id = session.subject_id
-        WHERE session.professor_id = @ProfessorId AND session.status = 'Confirmed' AND session.date_time > CURRENT_TIMESTAMP;
-
-        --Cancelled sessions
-        SELECT session.id, date_time, status, student.id, student.name, student.surname, student.profile_picture, subject.id, title
-        FROM session 
-        JOIN student ON session.student_id = student.id 
-        JOIN professor ON session.professor_id = professor.id 
-        JOIN subject ON subject.id = session.subject_id
-        WHERE session.professor_id = @ProfessorId AND session.status = 'Cancelled';";
-
-            using (var multi = await _connection.QueryMultipleAsync(query, new { ProfessorId = professorId }))
+            using (var multi = await _connection.QueryMultipleAsync("GetAllSessionsForInstructor", new { InstructorId = instructorId }, commandType: CommandType.StoredProcedure))
             {
-                var pastSessions = multi.Read<Session, Student, Subject, SessionWithStudentDTO>((session, student, subject) =>
+                var pendingSessions = MapSessionResults(multi);
+                var upcomingSessions = MapSessionResults(multi);
+                var pastSessions = MapSessionResults(multi);
+                var cancelledSessions = MapSessionResults(multi);
+
+                return new SessionsDTO<SessionWithUserDTO>
                 {
-                    return new SessionWithStudentDTO
-                    {
-                        SessionId = session.Id,
-                        DateTime = session.DateTime,
-                        Status = session.Status,
-
-                        Student = new Student
-                        {
-                            Id = student.Id,
-                            Name = student.Name,
-                            Surname = student.Surname,
-                            ProfilePicture = student.ProfilePicture
-                        },
-
-                        Subject = new Subject
-                        {
-                            Id = subject.Id,
-                            Title = subject.Title
-                        }
-                    };
-                }, splitOn: "id,id").ToList();
-
-                var pendingSessions = multi.Read<Session, Student, Subject, SessionWithStudentDTO>((session, student, subject) =>
-                {
-                    return new SessionWithStudentDTO
-                    {
-                        SessionId = session.Id,
-                        DateTime = session.DateTime,
-                        Status = session.Status,
-
-                        Student = new Student
-                        {
-                            Id = student.Id,
-                            Name = student.Name,
-                            Surname = student.Surname,
-                            ProfilePicture = student.ProfilePicture
-                        },
-
-                        Subject = new Subject
-                        {
-                            Id = subject.Id,
-                            Title = subject.Title
-                        }
-                    };
-                }, splitOn: "id,id").ToList();
-
-                var upcomingSessions = multi.Read<Session, Student, Subject, SessionWithStudentDTO>((session, student, subject) =>
-                {
-                    return new SessionWithStudentDTO
-                    {
-                        SessionId = session.Id,
-                        DateTime = session.DateTime,
-                        Status = session.Status,
-
-                        Student = new Student
-                        {
-                            Id = student.Id,
-                            Name = student.Name,
-                            Surname = student.Surname,
-                            ProfilePicture = student.ProfilePicture
-                        },
-
-                        Subject = new Subject
-                        {
-                            Id = subject.Id,
-                            Title = subject.Title
-                        }
-                    };
-                }, splitOn: "id,id").ToList();
-
-                var cancelledSessions = multi.Read<Session, Student, Subject, SessionWithStudentDTO>((session, student, subject) =>
-                {
-                    return new SessionWithStudentDTO
-                    {
-                        SessionId = session.Id,
-                        DateTime = session.DateTime,
-                        Status = session.Status,
-
-                        Student = new Student
-                        {
-                            Id = student.Id,
-                            Name = student.Name,
-                            Surname = student.Surname,
-                            ProfilePicture = student.ProfilePicture
-                        },
-
-                        Subject = new Subject
-                        {
-                            Id = subject.Id,
-                            Title = subject.Title
-                        }
-                    };
-                }, splitOn: "id,id").ToList();
-
-                return new SessionsDTO<SessionWithStudentDTO>
-                {
-                    PastSessions = pastSessions,
                     PendingSessions = pendingSessions,
                     UpcomingSessions = upcomingSessions,
+                    PastSessions = pastSessions,
                     CancelledSessions = cancelledSessions
                 };
             }
@@ -322,16 +71,47 @@ namespace dotInstrukcijeBackend.Repositories
 
         public async Task<Session> GetSessionByIdAsync(int sessionId)
         {
-            const string query = @"SELECT * FROM session WHERE id = @SessionId";
+            const string query = @"SELECT * FROM session WHERE Id = @SessionId";
 
             return await _connection.QueryFirstOrDefaultAsync<Session>(query, new { SessionId = sessionId });
         }
 
         public async Task ManageSessionRequestAsync(int sessionId, string newStatus)
         {
-            const string query = @"UPDATE session SET status = @NewStatus WHERE id = @SessionId";
+            const string query = @"UPDATE session SET Status = @NewStatus WHERE Id = @SessionId";
 
             await _connection.ExecuteAsync(query, new { SessionId = sessionId, NewStatus = newStatus });
+        }
+
+        private List<SessionWithUserDTO> MapSessionResults(SqlMapper.GridReader multi)
+        {
+            return multi.Read<Session, User, Subject, SessionWithUserDTO>(
+                (session, user, subject) => new SessionWithUserDTO
+                {
+                    SessionId = session.Id,
+                    DateTime = session.DateTime,
+                    Status = session.Status,
+                    User = new User
+                    {
+                        Id = user.Id,
+                        RoleId = user.RoleId,
+                        Email = user.Email,
+                        Name = user.Name,
+                        Surname = user.Surname,
+                        PasswordHash = user.PasswordHash,
+                        ProfilePicture = user.ProfilePicture,
+                        OAuthId = user.OAuthId,
+                        CreatedAt = user.CreatedAt,
+                        IsVerified = user.IsVerified
+                    },
+                    Subject = new Subject
+                    {
+                        Id = subject.Id,
+                        Title = subject.Title,
+                        Url = subject.Url,
+                        Description = subject.Description
+                    }
+                }, splitOn: "Id,Id").ToList();
         }
     }
 }

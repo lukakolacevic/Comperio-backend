@@ -29,7 +29,7 @@ namespace dotInstrukcijeBackend.Services
             var session = new Session
             {
                 StudentId = studentId,
-                ProfessorId = request.ProfessorId,
+                InstructorId = request.InstructorId,
                 SubjectId = request.SubjectId,
                 DateTime = request.DateTime,
                 Status = "Pending"
@@ -39,21 +39,21 @@ namespace dotInstrukcijeBackend.Services
         }
         
         
-        public async Task<ServiceResult<SessionsDTO<SessionWithProfessorDTO>>> GetAllStudentSessionsAsync(int studentId)
+        public async Task<ServiceResult<SessionsDTO<SessionWithUserDTO>>> GetAllStudentSessionsAsync(int studentId)
         {
             var sessions = await _sessionRepository.GetAllStudentSessionsAsync(studentId);
-            return ServiceResult<SessionsDTO<SessionWithProfessorDTO>>.Success(sessions);
+            return ServiceResult<SessionsDTO<SessionWithUserDTO>>.Success(sessions);
         }
 
 
-        public async Task<ServiceResult<SessionsDTO<SessionWithStudentDTO>>> GetAllProfessorSessionsAsync(int professorId)
+        public async Task<ServiceResult<SessionsDTO<SessionWithUserDTO>>> GetAllInstructorSessionsAsync(int instructorId)
         {
-            var sessions = await _sessionRepository.GetAllSessionsForProfessorAsync(professorId);
-            return ServiceResult<SessionsDTO<SessionWithStudentDTO>>.Success(sessions);
+            var sessions = await _sessionRepository.GetAllInstructorSessionsAsync(instructorId);
+            return ServiceResult<SessionsDTO<SessionWithUserDTO>>.Success(sessions);
         }
         
         
-        public async Task<ServiceResult> ManageSessionRequestAsync(int professorId, ManageSessionRequestModel request)
+        public async Task<ServiceResult> ManageSessionRequestAsync(int instructorId, ManageSessionRequestModel request)
         {
             var session = await _sessionRepository.GetSessionByIdAsync(request.SessionId);
 
@@ -62,7 +62,7 @@ namespace dotInstrukcijeBackend.Services
                 return ServiceResult.Failure("Session not found.", 404);
             }
 
-            if (session.ProfessorId != professorId)
+            if (session.InstructorId != instructorId)
             {
                 return ServiceResult.Failure("Unauthorized professor.", 403);
             }

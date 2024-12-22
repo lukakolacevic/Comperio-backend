@@ -7,7 +7,7 @@ namespace dotInstrukcijeBackend.Models
         [Key]
         public int Id { get; set; }
         public int StudentId { get; set; }
-        public int ProfessorId { get; set; }
+        public int InstructorId { get; set; }
         public int SubjectId { get; set; }        
         public DateTime DateTime { get; set; }
         public String Status { get; set; }

@@ -8,8 +8,8 @@ namespace dotInstrukcijeBackend.Interfaces.Service
     public interface ISessionService
     {
         Task<ServiceResult> ScheduleSessionAsync(int studentId, ScheduleSessionModel request);
-        Task<ServiceResult<SessionsDTO<SessionWithProfessorDTO>>> GetAllStudentSessionsAsync(int studentId);
-        Task<ServiceResult<SessionsDTO<SessionWithStudentDTO>>> GetAllProfessorSessionsAsync(int professorId);
+        Task<ServiceResult<SessionsDTO<SessionWithUserDTO>>> GetAllStudentSessionsAsync(int studentId);
+        Task<ServiceResult<SessionsDTO<SessionWithUserDTO>>> GetAllInstructorSessionsAsync(int instructorId);
         Task<ServiceResult> ManageSessionRequestAsync(int professorId, ManageSessionRequestModel request);
     }
 }

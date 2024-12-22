@@ -1,5 +1,5 @@
 ﻿using dotInstrukcijeBackend.Models;
-using dotInstrukcijeBackend.HelperFunctions;
+//using dotInstrukcijeBackend.HelperFunctions;
 using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Interfaces.Service;
 using dotInstrukcijeBackend.ServiceResultUtility;
@@ -11,12 +11,12 @@ namespace dotInstrukcijeBackend.Services
     public class SubjectService : ISubjectService
     {
         private readonly ISubjectRepository _subjectRepository;
-        private readonly IProfessorRepository _professorRepository;
+        private readonly IInstructorRepository _instructorRepository;
 
-        public SubjectService(ISubjectRepository subjectRepository, IProfessorRepository professorRepository)
+        public SubjectService(ISubjectRepository subjectRepository, IInstructorRepository instructorRepository)
         {
             _subjectRepository = subjectRepository;
-            _professorRepository = professorRepository;
+            _instructorRepository = instructorRepository;
         }
 
         public async Task<ServiceResult> CreateSubjectAsync(SubjectRegistrationModel request, int professorId)
@@ -40,33 +40,35 @@ namespace dotInstrukcijeBackend.Services
             };
 
             var subjectId = await _subjectRepository.AddSubjectAsync(subject);
-            await _professorRepository.AssociateProfessorWithSubjectAsync(professorId, subjectId);
+            await _instructorRepository.AssociateInstructorWithSubjectAsync(professorId, subjectId);
 
             return ServiceResult.Success();
         }
 
-        public async Task<ServiceResult<(Subject subject, IEnumerable<Professor> professors)>> FindSubjectByURLAsync(string url)
+        public async Task<ServiceResult<(Subject subject, IEnumerable<User> instructors)>> FindSubjectByURLAsync(string url)
         {
             var subjectDetails = await _subjectRepository.GetSubjectByURLAsync(url);
 
             if (subjectDetails.Subject == null)
             {
-                return ServiceResult<(Subject, IEnumerable<Professor>)>.Failure("Subject not found.", 404);
+                return ServiceResult<(Subject, IEnumerable<User>)>.Failure("Subject not found.", 404);
             }
 
             // Previously mapped to ProfessorDTO. Now we directly construct Professor objects.
-            var professors = subjectDetails.SubjectProfessors.Select(professor => new Professor
+            var instructors = subjectDetails.SubjectInstructors.Select(professor => new User
             {
                 Id = professor.Id,
                 Email = professor.Email,
                 Name = professor.Name,
                 Surname = professor.Surname,
-                Password = professor.Password,
+                PasswordHash = professor.PasswordHash,
                 ProfilePicture = professor.ProfilePicture,
-                InstructionsCount = professor.InstructionsCount
+                OAuthId = professor.OAuthId,
+                CreatedAt = professor.CreatedAt,
+                IsVerified = professor.IsVerified
             }).ToList();
 
-            return ServiceResult<(Subject, IEnumerable<Professor>)>.Success((subjectDetails.Subject, professors));
+            return ServiceResult<(Subject, IEnumerable<User>)>.Success((subjectDetails.Subject, instructors));
         }
 
         public async Task<ServiceResult<IEnumerable<Subject>>> FindAllSubjectsAsync()
@@ -75,9 +77,9 @@ namespace dotInstrukcijeBackend.Services
             return ServiceResult<IEnumerable<Subject>>.Success(subjects);
         }
 
-        public async Task<ServiceResult<IEnumerable<Subject>>> FindAllSubjectsForProfessorAsync(int professorId)
+        public async Task<ServiceResult<IEnumerable<Subject>>> FindAllSubjectsForInstructorAsync(int instructorId)
         {
-            var subjects = await _subjectRepository.GetAllSubjectsForProfessorAsync(professorId);
+            var subjects = await _subjectRepository.GetAllSubjectsForInstructorAsync(instructorId);
             return ServiceResult<IEnumerable<Subject>>.Success(subjects);
         }
     }

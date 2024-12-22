@@ -1,6 +1,7 @@
 ﻿using Azure;
+using dotInstrukcijeBackend.Interfaces.Repository;
 using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
-using dotInstrukcijeBackend.Interfaces.User;
+//using dotInstrukcijeBackend.Interfaces.User;
 using dotInstrukcijeBackend.Interfaces.Utility;
 using dotInstrukcijeBackend.Models;
 using dotInstrukcijeBackend.ServiceResultUtility;
@@ -14,17 +15,17 @@ namespace dotInstrukcijeBackend.JWTTokenUtility
     public class TokenService : ITokenService
     {
         private readonly IStudentRepository _studentRepository;
-        private readonly IProfessorRepository _professorRepository;
+        private readonly IInstructorRepository _professorRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
 
-        public TokenService(IStudentRepository studentRepository, IProfessorRepository professorRepository, IConfiguration configuration)
+        public TokenService(IUserRepository userRepository, IConfiguration configuration)
         {
-            _studentRepository = studentRepository;
-            _professorRepository = professorRepository;
+            _userRepository = userRepository;
             _configuration = configuration;
         }
 
-        public string GenerateAccessToken(IUser user)
+        public string GenerateAccessToken(User user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:AccessTokenSecretKey"]);
@@ -35,7 +36,7 @@ namespace dotInstrukcijeBackend.JWTTokenUtility
                 {
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim("id", user.Id.ToString()),
-                    new Claim(ClaimTypes.Role, user.Role)
+                    new Claim(ClaimTypes.Role, user.RoleId.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddMinutes(15),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -45,7 +46,7 @@ namespace dotInstrukcijeBackend.JWTTokenUtility
             return tokenHandler.WriteToken(token);
         }
 
-        public string GenerateRefreshToken(IUser user)
+        public string GenerateRefreshToken(User user)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:RefreshTokenSecretKey"]);
@@ -55,7 +56,7 @@ namespace dotInstrukcijeBackend.JWTTokenUtility
                 Subject = new ClaimsIdentity(new[]
                 {
                     new Claim("id", user.Id.ToString()),
-                    new Claim(ClaimTypes.Role, user.Role)
+                    new Claim(ClaimTypes.Role, user.RoleId.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddDays(7),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -66,7 +67,7 @@ namespace dotInstrukcijeBackend.JWTTokenUtility
             return tokenHandler.WriteToken(token);
         }
 
-        public async Task <ServiceResult<(string, string)>> RefreshToken(string oldRefreshToken)
+        public async Task<ServiceResult<(string, string)>> RefreshToken(string oldRefreshToken)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:RefreshTokenSecretKey"]);
@@ -81,45 +82,24 @@ namespace dotInstrukcijeBackend.JWTTokenUtility
             }, out var validatedToken);
 
             var userId = principal.FindFirst("id")?.Value;
-            var role = principal.FindFirst(ClaimTypes.Role)?.Value;
+            var roleId = principal.FindFirst(ClaimTypes.Role)?.Value;
 
-            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(role))
+            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(roleId))
             {
                 return ServiceResult<(string, string)>.Failure("Invalid token claims.", 400);
             }
 
-            IUser user = null;
-            if(role == "Professor")
-            {
-                var professor = await _professorRepository.GetProfessorByIdAsync(int.Parse(userId));
-                if(professor == null)
-                {
-                    return ServiceResult<(string, string)>.Failure("Professor from claim not found.", 404);
-                }
-                user = (IUser?)professor;
-            }
-
-            else
-            {
-                var student = await _studentRepository.GetStudentByIdAsync(int.Parse(userId));
-                if (student == null)
-                {
-                    return ServiceResult<(string, string)>.Failure("Student from claim not found.", 404);
-                }
-                user = (IUser?)student;
-            }
-
+            var user = await _userRepository.GetUserByIdAsync(int.Parse(roleId));
             if (user == null)
             {
-                return ServiceResult<(string, string)>.Failure("User not found.", 404);
+                return ServiceResult<(string, string)>.Failure("User from claim not found.", 404);
             }
 
             var newAccessToken = GenerateAccessToken(user);
             var newRefreshToken = GenerateRefreshToken(user);
-
             return ServiceResult<(string, string)>.Success((newAccessToken, newRefreshToken));
-        }
 
+        }
         public string GenerateEmailVerificationToken(int userId)
         {
             var tokenHandler = new JwtSecurityTokenHandler();

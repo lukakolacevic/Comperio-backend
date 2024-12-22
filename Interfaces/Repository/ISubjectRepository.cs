@@ -13,7 +13,7 @@ namespace dotInstrukcijeBackend.Interfaces.RepositoryInterfaces
 
         Task<SubjectDetailsDTO> GetSubjectByURLAsync(string url);
 
-        Task<IEnumerable<Subject>> GetAllSubjectsForProfessorAsync(int professorId);
+        Task<IEnumerable<Subject>> GetAllSubjectsForInstructorAsync(int instructorId);
 
         Task<Subject> GetSubjectByIdAsync(int id);
         Task<IEnumerable<SubjectFrequencyDTO>> GetTopFiveRequestedSubjectsAsync(int studentId);

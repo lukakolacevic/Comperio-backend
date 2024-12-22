@@ -14,53 +14,14 @@ namespace dotInstrukcijeBackend.Repositories
             _connection = connection;
         }
 
-        public async Task<Student> GetStudentByEmailAsync(string email)
-        {
-            const string query = @"SELECT * FROM student WHERE email = @Email";
-
-            return await _connection.QueryFirstOrDefaultAsync<Student>(query, new { Email = email });
-        }
-
-        public async Task AddStudentAsync(Student student)
-        {
-            const string query = @"INSERT INTO student (email, name, surname, password, profile_picture) 
-                                   VALUES (@Email, @Name, @Surname, @Password, @ProfilePicture)";
-
-            await _connection.ExecuteAsync(query,
-                new { Email = student.Email, Name = student.Name, Surname = student.Surname, 
-                    Password = student.Password, ProfilePicture = student.ProfilePicture
-                });
-        }
-
-        public async Task<IEnumerable<Student>> GetAllStudentsAsync()
-        {
-            const string query = @"SELECT * FROM student;";
-
-            return await _connection.QueryAsync<Student>(query);
-        }
-
         public async Task<bool> CanScheduleMoreSessionsAsync(int studentId)
         {
-            const string query = @"SELECT COUNT(*) FROM session where student_id = @StudentId AND status = 'Pending' 
-                                    AND date_time > CURRENT_TIMESTAMP;";
+            const string query = @"SELECT COUNT(*) FROM session where StudentId = @StudentId AND status = 'Pending' 
+                                    AND DateTime > CURRENT_TIMESTAMP;";
 
             var numberOfSessions = await _connection.ExecuteScalarAsync<int>(query, new {StudentId = studentId});
 
             return numberOfSessions < 5;
-        }
-
-        public async Task<Student> GetStudentByIdAsync(int id)
-        {
-            const string query = @"SELECT * FROM student WHERE id = @Id";
-
-            return await _connection.QueryFirstOrDefaultAsync<Student>(query, new {Id = id});
-        }
-
-        public async Task SetEmailVerifiedAsync(int id)
-        {
-            const string query = @"UPDATE student SET is_verified = TRUE WHERE id = @Id";
-
-            await _connection.ExecuteAsync(query, new { Id = id });
         }
     }
 }

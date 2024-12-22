@@ -24,6 +24,7 @@ using dotInstrukcijeBackend.Interfaces.Service;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
 using System.Text.Json.Serialization;
+using dotInstrukcijeBackend.Interfaces.Repository;
 
 internal class Program
 {
@@ -40,20 +41,22 @@ internal class Program
 
         // Database connection
         builder.Services.AddScoped<IDbConnection>(sp =>
-            new NpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
+            new SqlConnection(builder.Configuration.GetConnectionString("DefaultConnection")));
 
         builder.Services.Configure<IdentityOptions>(options => options.SignIn.RequireConfirmedEmail = true);
 
         // Repository and service registrations
         builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-        builder.Services.AddScoped<IProfessorRepository, ProfessorRepository>();
+        builder.Services.AddScoped<IInstructorRepository, InstructorRepository>();
         builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
         builder.Services.AddScoped<ISessionRepository, SessionRepository>();
+        builder.Services.AddScoped<IUserRepository, UserRepository>();
 
         builder.Services.AddScoped<IStudentService, StudentService>();
-        builder.Services.AddScoped<IProfessorService, ProfessorService>();
+        builder.Services.AddScoped<IInstructorService, InstructorService>();
         builder.Services.AddScoped<ISubjectService, SubjectService>();
         builder.Services.AddScoped<ISessionService, SessionService>();
+        builder.Services.AddScoped<IUserService, UserService>();
 
         builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
         builder.Services.AddScoped<IProfilePhotoSaver, ProfilePhotoSaver>();
@@ -74,12 +77,12 @@ internal class Program
         });
 
         // Configure JSON options
-        builder.Services.AddControllers().AddJsonOptions(options =>
-        {
-            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            // Add the ByteArrayToBase64Converter to automatically convert byte[] to Base64
-            options.JsonSerializerOptions.Converters.Add(new ByteArrayToBase64Converter());
-        });
+        builder.Services.AddControllers()
+             .AddJsonOptions(options =>
+       {
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+       });
+
 
         // Configure Swagger
         builder.Services.AddSwaggerGen(options =>

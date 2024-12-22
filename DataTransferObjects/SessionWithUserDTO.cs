@@ -2,12 +2,13 @@
 
 namespace dotInstrukcijeBackend.DataTransferObjects
 {
-    public class SessionWithStudentDTO
+    public class SessionWithUserDTO
     {
         public int SessionId { get; set; }
         public DateTime DateTime { get; set; }
         public string Status { get; set; }
-        public User Student { get; set; }
+        public User User { get; set; }
         public Subject Subject { get; set; }
+
     }
 }

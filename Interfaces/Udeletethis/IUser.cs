@@ -1,4 +1,4 @@
-﻿namespace dotInstrukcijeBackend.Interfaces.User
+﻿namespace dotInstrukcijeBackend.Interfaces
 {
     public interface IUser
     {

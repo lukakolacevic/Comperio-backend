@@ -1,4 +1,4 @@
-﻿using dotInstrukcijeBackend.HelperFunctions;
+﻿//using dotInstrukcijeBackend.HelperFunctions;
 using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
 using dotInstrukcijeBackend.Interfaces.Service;
 using dotInstrukcijeBackend.Models;
@@ -20,7 +20,7 @@ namespace dotInstrukcijeBackend.Controllers
             _sessionService = sessionService;
         }
 
-        [Authorize(Roles = "Student")]
+        [Authorize(Roles = "1")]
         [HttpPost("sessions")]
         public async Task<IActionResult> ScheduleInstructionSession([FromBody] ScheduleSessionModel request)
         {
@@ -40,7 +40,7 @@ namespace dotInstrukcijeBackend.Controllers
             return Ok(new { success = true, message = "Session created successfully." });
         }
 
-        [Authorize(Roles = "Student")]
+        [Authorize(Roles = "1")]
         [HttpGet("sessions/students/{studentId}")]
         public async Task<IActionResult> GetAllStudentSessions(int studentId)
         {
@@ -68,16 +68,16 @@ namespace dotInstrukcijeBackend.Controllers
         }
 
 
-        [Authorize(Roles = "Professor")]
-        [HttpGet("sessions/professors/{professorId}")]
-        public async Task<IActionResult> GetAllProfessorSessions(int professorId)
+        [Authorize(Roles = "2")]
+        [HttpGet("sessions/instructors/{instructorId}")]
+        public async Task<IActionResult> GetAllInstructorSessions(int instructorId)
         {
             var professorIdToCheck = int.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
-            if (professorId != professorIdToCheck)
+            if (instructorId != professorIdToCheck)
             {
-                return Unauthorized(new { success = false, message = "Professor unauthorized to get all sessions." });
+                return Unauthorized(new { success = false, message = "Instructor unauthorized to get all sessions." });
             }
-            var result = await _sessionService.GetAllProfessorSessionsAsync(professorId);
+            var result = await _sessionService.GetAllInstructorSessionsAsync(instructorId);
 
             if (!result.IsSuccess)
             {
@@ -95,7 +95,7 @@ namespace dotInstrukcijeBackend.Controllers
             });
         }
 
-        [Authorize(Roles = "Professor")]
+        [Authorize(Roles = "2")]
         [HttpPatch("sessions")]
         public async Task<IActionResult> ManageSessionRequest([FromBody] ManageSessionRequestModel request)
         {

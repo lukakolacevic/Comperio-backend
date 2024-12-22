@@ -16,7 +16,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using dotInstrukcijeBackend.ProfilePictureSavingUtility;
 using dotInstrukcijeBackend.DataTransferObjects;
-using dotInstrukcijeBackend.HelperFunctions;
+//using dotInstrukcijeBackend.HelperFunctions;
 using System.CodeDom;
 using Microsoft.DotNet.Scaffolding.Shared.Messaging;
 using dotInstrukcijeBackend.Interfaces.RepositoryInterfaces;
@@ -28,37 +28,39 @@ using Azure.Core;
 namespace dotInstrukcijeBackend.Controllers
 {
     [ApiController]
-    public class ProfessorController : ControllerBase
+    public class InstructorController : ControllerBase
     {
-        private readonly IProfessorService _professorService;
+        private readonly IInstructorService _instructorService;
+        private readonly IUserService _userService;
        
-        public ProfessorController(IProfessorService professorService)
+        public InstructorController(IInstructorService instructorService, IUserService userService)
         {
-            _professorService = professorService;
+            _instructorService = instructorService;
+            _userService = userService;
         }
 
 
         [Authorize]
         [HttpGet("professor/{email}")]
 
-        public async Task<IActionResult> GetProfessorByEmail(string email)
+        public async Task<IActionResult> GetInstructorByEmail(string email)
         {
-            var result = await _professorService.FindProfessorByEmailAsync(email);
+            var result = await _userService.FindUserByEmailAsync(2, email);
 
             if (!result.IsSuccess)
             {
                 return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
             }
 
-            return Ok(new { success = true, professor = result.Data });
+            return Ok(new { success = true, instructor = result.Data });
         }
 
         [Authorize]
-        [HttpGet("professors")]
+        [HttpGet("instructors")]
 
-        public async Task<IActionResult> GetTopFiveProfessorsByInstructionsCount()
+        public async Task<IActionResult> GetTopFiveInstructorsByInstructionsCount()
         {
-            var result = await _professorService.FindTopFiveProfessorsByInstructionsCountAsync();
+            var result = await _instructorService.FindTopFiveInstructorsBySessionCountAsync();
 
             if (!result.IsSuccess)
             {
@@ -67,12 +69,12 @@ namespace dotInstrukcijeBackend.Controllers
 
             var listOfProfessors = result.Data;
             
-            return Ok(new { success = true, professors = listOfProfessors, message = "Top 5 professors returned successfully!" });
+            return Ok(new { success = true, instructors = listOfProfessors, message = "Top 5 instructors returned successfully!" });
         }
 
-        [Authorize]
-        [HttpDelete("professors/{professorId}/subjects/{subjectId}")]
-        public async Task<IActionResult> RemoveProfessorFromSubject(int professorId, int subjectId)
+        
+        [HttpDelete("instructor/{instructorId}/subjects/{subjectId}")]
+        public async Task<IActionResult> RemoveInstructorFromSubject(int instructorId, int subjectId)
         {
             if (!ModelState.IsValid)
             {
@@ -80,39 +82,39 @@ namespace dotInstrukcijeBackend.Controllers
             }
 
             var professorIdToCheck = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
-            if (int.Parse(professorIdToCheck) != professorId)
+            if (int.Parse(professorIdToCheck) != instructorId)
             {
-                return Unauthorized(new { success = false, message = "Professor unauthorized to remove subject." });
+                return Unauthorized(new { success = false, message = "Instructor unauthorized to remove subject." });
             }
 
-            var result = await _professorService.RemoveProfessorFromSubjectAsync(professorId, subjectId);
+            var result = await _instructorService.RemoveInstructorFromSubjectAsync(instructorId, subjectId);
 
             if (!result.IsSuccess)
             {
                 return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
             }
 
-            return Ok(new { success = true, message = "Professor removed from subject successfully." });
+            return Ok(new { success = true, message = "Instructor removed from subject successfully." });
         }
 
-        [Authorize(Roles = "Professor")]
-        [HttpPost("professor/{professorId}/subjects/{subjectId}")]
-        public async Task<IActionResult> JoinProfessorToSubject(int professorId, int subjectId)
+        [Authorize(Roles = "2")]
+        [HttpPost("instructor/{instructorId}/subjects/{subjectId}")]
+        public async Task<IActionResult> JoinInstructorToSubject(int instructorId, int subjectId)
         {
             var professorIdToCheck = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
-            if (int.Parse(professorIdToCheck) != professorId)
+            if (int.Parse(professorIdToCheck) != instructorId)
             {
-                return Unauthorized(new { success = false, message = "Professor unauthorized to join subject." });
+                return Unauthorized(new { success = false, message = "Instructor unauthorized to join subject." });
             }
 
-            var result = await _professorService.JoinProfessorToSubject(professorId, subjectId);
+            var result = await _instructorService.JoinInstructorToSubject(instructorId, subjectId);
 
             if (!result.IsSuccess)
             {
                 return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
             }
 
-            return Ok(new {success = true, message = "Professor enrolled into subject successfully."});
+            return Ok(new {success = true, message = "Instructor enrolled into subject successfully." });
         }
     }
 }

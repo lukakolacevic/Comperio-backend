@@ -8,7 +8,7 @@ namespace dotInstrukcijeBackend.ViewModels
         public DateTime DateTime { get; set; }
         
         [Required]
-        public int ProfessorId { get; set; }
+        public int InstructorId { get; set; }
 
         [Required]
         public int SubjectId { get; set; }

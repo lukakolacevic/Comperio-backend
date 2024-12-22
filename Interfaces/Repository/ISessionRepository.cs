@@ -7,9 +7,9 @@ namespace dotInstrukcijeBackend.Interfaces.RepositoryInterfaces
     {
         Task AddSessionAysnc(Session session);
 
-        Task<SessionsDTO<SessionWithProfessorDTO>> GetAllStudentSessionsAsync(int studentId);
+        Task<SessionsDTO<SessionWithUserDTO>> GetAllStudentSessionsAsync(int studentId);
 
-        Task<SessionsDTO<SessionWithStudentDTO>> GetAllSessionsForProfessorAsync(int professorId);
+        Task<SessionsDTO<SessionWithUserDTO>> GetAllInstructorSessionsAsync(int instructorId);
 
         Task ManageSessionRequestAsync(int sessionId, string newStatus);
 

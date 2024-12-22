@@ -5,11 +5,13 @@ using dotInstrukcijeBackend.ViewModels;
 
 namespace dotInstrukcijeBackend.Interfaces.Service
 {
-    public interface ISubjectService
+    public interface IInstructorService
     {
-        Task<ServiceResult> CreateSubjectAsync(SubjectRegistrationModel request, int professorId);
-        Task<ServiceResult<(Subject subject, IEnumerable<User> instructors)>> FindSubjectByURLAsync(string url);
-        Task<ServiceResult<IEnumerable<Subject>>> FindAllSubjectsAsync();
         Task<ServiceResult<IEnumerable<Subject>>> FindAllSubjectsForInstructorAsync(int instructorId);
+        Task<ServiceResult<IEnumerable<User>>> FindTopFiveInstructorsBySessionCountAsync();
+        Task<ServiceResult> RemoveInstructorFromSubjectAsync(int instructorId, int subjectId);
+        Task<ServiceResult> JoinInstructorToSubject(int instructorId, int subjectId);
+      
+
     }
 }

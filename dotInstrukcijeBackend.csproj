@@ -7,17 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="HelperFunctions\MapToProfessorDTO.cs" />
     <Compile Remove="Interfaces\AppDatabaseContext.cs" />
+    <Compile Remove="Interfaces\Udeletethis\IUser.cs" />
     <Compile Remove="Migrations\20240320195514_InitialCreate.cs" />
     <Compile Remove="Migrations\20240320195514_InitialCreate.Designer.cs" />
     <Compile Remove="Migrations\AppDatabaseContextModelSnapshot.cs" />
+    <Compile Remove="Models\Professor.cs" />
+    <Compile Remove="Models\Student.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="8.0.3" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -33,6 +37,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="HelperFunctions\" />
+    <Folder Include="Interfaces\Udeletethis\" />
     <Folder Include="Migrations\" />
   </ItemGroup>
 
