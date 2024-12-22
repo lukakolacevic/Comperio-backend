@@ -32,6 +32,7 @@ namespace dotInstrukcijeBackend.Services
                 InstructorId = request.InstructorId,
                 SubjectId = request.SubjectId,
                 DateTime = request.DateTime,
+                DateTimeEnd = request.DateTime.AddMinutes(request.SessionLength),
                 Status = "Pending"
             };
             await _sessionRepository.AddSessionAysnc(session);

@@ -10,6 +10,7 @@ namespace dotInstrukcijeBackend.Models
         public int InstructorId { get; set; }
         public int SubjectId { get; set; }        
         public DateTime DateTime { get; set; }
+        public DateTime DateTimeEnd { get; set; }
         public String Status { get; set; }
     }
 }

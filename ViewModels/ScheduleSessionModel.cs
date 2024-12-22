@@ -6,6 +6,9 @@ namespace dotInstrukcijeBackend.ViewModels
     {
         [Required]
         public DateTime DateTime { get; set; }
+
+        [Required]
+        public int SessionLength { get; set; }
         
         [Required]
         public int InstructorId { get; set; }

@@ -18,15 +18,16 @@ namespace dotInstrukcijeBackend.Repositories
 
         public async Task AddSessionAysnc(Session session)
         {
-            const string query = @"INSERT INTO session (StudentId, InstructorId, SubjectId, DateTime, Status) 
-                                  VALUES(@StudentId, @ProfessorId, @SubjectId, @DateTime, @Status)";
+            const string query = @"INSERT INTO session (StudentId, InstructorId, SubjectId, DateTime, DateTimeEnd, Status) 
+                                  VALUES(@StudentId, @InstructorId, @SubjectId, @DateTime, @DateTimeEnd, @Status)";
 
             await _connection.ExecuteAsync(query, new
             {
                 StudentId = session.StudentId,
-                ProfessorId = session.InstructorId,
+                InstructorId = session.InstructorId,
                 SubjectId = session.SubjectId,
                 DateTime = session.DateTime,
+                DateTimeEnd = session.DateTimeEnd,
                 Status = session.Status
             });
         }
