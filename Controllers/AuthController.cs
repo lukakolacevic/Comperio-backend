@@ -8,6 +8,7 @@ using dotInstrukcijeBackend.Models;
 using dotInstrukcijeBackend.ServiceResultUtility;
 using dotInstrukcijeBackend.Services;
 using dotInstrukcijeBackend.ViewModels;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -198,5 +199,93 @@ namespace dotInstrukcijeBackend.Controllers
                 message = "Token refreshed successfully."
             });
         }
+
+        [HttpPost("google-login/{roleId}")]
+        public async Task<IActionResult> GoogleLogin(int roleId, [FromBody] TokenRequest request)
+        {
+            try
+            {
+                Console.WriteLine(request.Token);
+                // Validate Google token
+                var payload = await GoogleJsonWebSignature.ValidateAsync(request.Token);
+                Console.WriteLine("Tu sam.");
+                if (payload == null || string.IsNullOrEmpty(payload.Email))
+                {
+                    Console.WriteLine("Tu sam.");
+                    return BadRequest(new { success = false, message = "Invalid Google token." });
+                }
+
+                // Check if the user already exists in the database
+                var userResult = await _userService.FindUserByEmailAsync(roleId, payload.Email);
+                User user;
+
+                if (!userResult.IsSuccess)
+                {
+                    // If user doesn't exist, register them
+                    var newUser = new User
+                    {
+                        RoleId = roleId,
+                        Name = payload.GivenName,
+                        Surname = payload.FamilyName,
+                        Email = payload.Email,
+                        PasswordHash = null,
+                        ProfilePicture = payload.Picture,
+                        OAuthId = payload.Subject,
+                        CreatedAt = DateTime.UtcNow,
+                        IsVerified = true
+
+                        // Passed from the frontend: e.g., 1 = student, 2 = instructor
+            
+                    };
+
+                    var registrationResult = await _userService.RegisterGoogleUserAsync(roleId, newUser);
+                    if (!registrationResult.IsSuccess)
+                    {
+                        return StatusCode(500, new { success = false, message = "Failed to register user." });
+                    }
+
+                    user = registrationResult.Data;
+                }
+                else
+                {
+                    // If user exists, retrieve them
+                    user = userResult.Data;
+                }
+
+                // Generate tokens
+                var accessToken = _tokenService.GenerateAccessToken(user);
+                var refreshToken = _tokenService.GenerateRefreshToken(user);
+
+                _httpContextAccessor.HttpContext?.Response.Cookies.Append("accessToken", accessToken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = false,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = DateTime.UtcNow.AddMinutes(15)
+                });
+
+                _httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = false,
+                    SameSite = SameSiteMode.Lax,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                });
+
+                // Return success response
+                return Ok(new
+                {
+                    success = true,
+                    user = new { user.Id, user.Email, user.Name, user.Surname, user.RoleId },
+                    
+                });
+
+            }
+            catch (InvalidJwtException)
+            {
+                return Unauthorized(new { success = false, message = "Invalid Google token." });
+            }
+        }
+
     }
 }
