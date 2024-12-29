@@ -63,7 +63,7 @@ namespace dotInstrukcijeBackend.Services
                 Name = model.Name,
                 Surname = model.Surname,
                 PasswordHash = _passwordHasher.HashPassword(model.Password),
-                ProfilePicture = await _profilePhotoSaver.SaveProfilePictureAsync(model.ProfilePicture),
+                ProfilePicture = null,
                 OAuthId = null,
                 CreatedAt = DateTime.UtcNow,
                 IsVerified = false
@@ -109,6 +109,47 @@ namespace dotInstrukcijeBackend.Services
             }
 
             return ServiceResult<User>.Success(user);
+        }
+
+        public async Task<ServiceResult<User>> RegisterGoogleUserAsync(int roleId, User googleUser)
+        {
+            // Check if the email is already in use for this role
+            if (await _userRepository.GetUserByEmailAsync(roleId, googleUser.Email) != null)
+            {
+                return ServiceResult<User>.Failure("Email is already in use.", 400);
+            }
+
+            // Create the user entity
+            var user = new User
+            {
+                RoleId = roleId,
+                Email = googleUser.Email,
+                Name = googleUser.Name,
+                Surname = googleUser.Surname,
+                PasswordHash = null, // No password since it's Google login
+                ProfilePicture = googleUser.ProfilePicture, // Can be set to null or Google's profile picture URL
+                OAuthId = googleUser.OAuthId, // This should be set to the unique Google user ID
+                CreatedAt = DateTime.UtcNow,
+                IsVerified = true // Users logging in with Google are assumed verified
+            };
+
+            // Save the user in the database
+            var userId = await _userRepository.AddUserAsync(user);
+
+            // If the role is instructor, initialize instructor stats
+            if (roleId == 2)
+            {
+                await _instructorRepository.InitializeInstructorStats(userId);
+            }
+
+            // Retrieve the saved user
+            var registeredUser = await _userRepository.GetUserByIdAsync(userId);
+            if (registeredUser == null)
+            {
+                return ServiceResult<User>.Failure("Failed to retrieve registered user.", 500);
+            }
+
+            return ServiceResult<User>.Success(registeredUser);
         }
     }
 }
