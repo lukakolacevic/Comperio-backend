@@ -20,7 +20,7 @@ namespace dotInstrukcijeBackend.Controllers
             _sessionService = sessionService;
         }
 
-        [Authorize(Roles = "1")]
+        //[Authorize(Roles = "1")]
         [HttpPost("sessions")]
         public async Task<IActionResult> ScheduleInstructionSession([FromBody] ScheduleSessionModel request)
         {
@@ -40,12 +40,12 @@ namespace dotInstrukcijeBackend.Controllers
             return Ok(new { success = true, message = "Session created successfully." });
         }
 
-        [Authorize(Roles = "1")]
+        //[Authorize(Roles = "1")]
         [HttpGet("sessions/students/{studentId}")]
         public async Task<IActionResult> GetAllStudentSessions(int studentId)
         {
-            var studentIdToCheck = int.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
-            if (studentId != studentIdToCheck)
+            //var studentIdToCheck = int.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
+            if (studentId == 0)
             {
                 return Unauthorized(new { success = false, message = "Student unauthorized to get all sessions." });
             }

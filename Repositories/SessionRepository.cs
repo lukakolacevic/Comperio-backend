@@ -91,6 +91,7 @@ namespace dotInstrukcijeBackend.Repositories
                 {
                     SessionId = session.Id,
                     DateTime = session.DateTime,
+                    DateTimeEnd = session.DateTimeEnd,
                     Status = session.Status,
                     User = new User
                     {
