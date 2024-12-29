@@ -14,8 +14,8 @@ namespace dotInstrukcijeBackend.Models
         [JsonIgnore]
         public string PasswordHash { get; set; }
 
-        [JsonConverter(typeof(ByteArrayToBase64Converter))]
-        public byte[]? ProfilePicture { get; set; }
+        
+        public string? ProfilePicture { get; set; }
         [JsonIgnore]
         public string? OAuthId { get; set; }
         [JsonIgnore]
