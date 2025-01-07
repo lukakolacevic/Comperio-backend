@@ -84,6 +84,18 @@ namespace dotInstrukcijeBackend.Repositories
             await _connection.ExecuteAsync(query, new { SessionId = sessionId, NewStatus = newStatus });
         }
 
+        public async Task<SessionDetailsDTO> GetSessionDetailsAsync(int sessionId)
+        {
+            var query = "EXEC GetSessionDetails @SessionId";
+            var parameters = new { SessionId = sessionId };
+
+            
+            var result = await _connection.QueryFirstOrDefaultAsync<SessionDetailsDTO>(query, parameters);
+
+            return result;
+        }
+
+
         private List<SessionWithUserDTO> MapSessionResults(SqlMapper.GridReader multi)
         {
             return multi.Read<Session, User, Subject, SessionWithUserDTO>(

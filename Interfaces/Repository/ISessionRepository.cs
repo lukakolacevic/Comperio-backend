@@ -14,5 +14,6 @@ namespace dotInstrukcijeBackend.Interfaces.RepositoryInterfaces
         Task ManageSessionRequestAsync(int sessionId, string newStatus);
 
         Task<Session> GetSessionByIdAsync(int sessionId);
+        Task<SessionDetailsDTO> GetSessionDetailsAsync(int sessionId);
     }
 }
