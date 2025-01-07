@@ -80,7 +80,7 @@ namespace dotInstrukcijeBackend.Controllers
 
         }   
 
-        [Authorize(Roles = "1")]
+        
         [HttpGet("students/{studentId}/stats/popular-subjects")]
         public async Task<IActionResult> GetTopFiveRequestedSubjects(int studentId)
         {
@@ -106,11 +106,13 @@ namespace dotInstrukcijeBackend.Controllers
             });
         }
 
-        [Authorize(Roles = "1")]
+        
         [HttpGet("students/{studentId}/stats/popular-instructors")]
         public async Task<IActionResult> GetTopFiveRequestedProfessors(int studentId)
         {
             var studentIdToCheck = int.Parse(HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value);
+            Console.WriteLine($"studentId: {studentId}, studentIdToCheck: {studentIdToCheck}");
+
             if (studentId != studentIdToCheck)
             {
                 return Unauthorized(new { success = false, message = "Student unauthorized to get most popular subjects." });
