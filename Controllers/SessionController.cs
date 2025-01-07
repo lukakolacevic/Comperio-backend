@@ -34,7 +34,7 @@ namespace dotInstrukcijeBackend.Controllers
 
             if (!result.IsSuccess)
             {
-                return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage});
+                return StatusCode(result.StatusCode, new { success = false, message = result.ErrorMessage });
             }
 
             return Ok(new { success = true, message = "Session created successfully." });
@@ -115,5 +115,39 @@ namespace dotInstrukcijeBackend.Controllers
             return Ok(new { success = true, message = $"Session {request.NewStatus.ToLower()} successfully." });
         }
 
+        [HttpGet("sessions/{sessionId}")]
+        public async Task<IActionResult> GetSessionDetails(int sessionId)
+        {
+
+            var sessionDetails = await _sessionService.GetSessionDetailsAsync(sessionId);
+
+            if (!sessionDetails.IsSuccess)
+            {
+                return NotFound(new { Message = "Session not found." });
+            }
+
+            return Ok(new { success = true, message = "Session found successfully.", sessionDetails = sessionDetails.Data });
+
+        }
+
+        [HttpPatch("sessions/{sessionId}/edit-note")]
+        public async Task<IActionResult> EditSessionNote(int sessionId, [FromBody] EditSessionNoteModel request)
+        {
+            var sessionDetails = await _sessionService.GetSessionDetailsAsync(sessionId);
+
+            if (!sessionDetails.IsSuccess)
+            {
+                return NotFound(new { Message = "Session not found." });
+            }
+
+            var result = await _sessionService.EditSessionNoteAsync(sessionId, request.NewNote);
+            if (!result.IsSuccess)
+            {
+                return StatusCode(result.StatusCode, new { success = false, message = "Session edited unsuccessfully." });
+            }
+
+            return Ok(new { success = true, message = "Session note edited successfully."});
+
+        }
     }
 }
