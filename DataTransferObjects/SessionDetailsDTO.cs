@@ -14,10 +14,10 @@
         public string SubjectTitle { get; set; }
 
         // Professor Details
-        public int ProfessorId { get; set; }
-        public string ProfessorName { get; set; }
-        public string ProfessorSurname { get; set; }
-        public string ProfessorEmail { get; set; } // Optional
+        public int InstructorId { get; set; }
+        public string InstructorName { get; set; }
+        public string InstructorSurname { get; set; }
+        public string InstructorEmail { get; set; } // Optional
 
         // Student Details
         public int StudentId { get; set; }
