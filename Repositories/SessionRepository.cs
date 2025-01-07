@@ -95,6 +95,11 @@ namespace dotInstrukcijeBackend.Repositories
             return result;
         }
 
+        public async Task EditSessionNoteAsync(int sessionId, string newNote)
+        {
+            var query = @"UPDATE session SET Note = @NewNote WHERE Id = @SessionId";
+            await _connection.ExecuteAsync(query, new { NewNote = newNote, SessionId = sessionId});
+        }
 
         private List<SessionWithUserDTO> MapSessionResults(SqlMapper.GridReader multi)
         {

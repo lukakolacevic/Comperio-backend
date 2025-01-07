@@ -15,5 +15,6 @@ namespace dotInstrukcijeBackend.Interfaces.RepositoryInterfaces
 
         Task<Session> GetSessionByIdAsync(int sessionId);
         Task<SessionDetailsDTO> GetSessionDetailsAsync(int sessionId);
+        Task EditSessionNoteAsync(int sessionId, string newNote);
     }
 }
