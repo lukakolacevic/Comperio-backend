@@ -87,5 +87,11 @@ namespace dotInstrukcijeBackend.Services
             var sessionDetails = await _sessionRepository.GetSessionDetailsAsync(sessionId);
             return ServiceResult<SessionDetailsDTO>.Success(sessionDetails);
         }
+
+        public async Task<ServiceResult> EditSessionNoteAsync(int sessionId, string newNote)
+        {
+            await _sessionRepository.EditSessionNoteAsync(sessionId, newNote);
+            return ServiceResult.Success();
+        }
     }
 }

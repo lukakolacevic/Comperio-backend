@@ -12,5 +12,6 @@ namespace dotInstrukcijeBackend.Interfaces.Service
         Task<ServiceResult<SessionsDTO<SessionWithUserDTO>>> GetAllInstructorSessionsAsync(int instructorId);
         Task<ServiceResult> ManageSessionRequestAsync(int professorId, ManageSessionRequestModel request);
         Task<ServiceResult<SessionDetailsDTO>> GetSessionDetailsAsync(int sessionId);
+        Task<ServiceResult> EditSessionNoteAsync(int sessionId, string newNote);
     }
 }
