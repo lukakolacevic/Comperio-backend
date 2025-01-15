@@ -176,7 +176,7 @@ namespace dotInstrukcijeBackend.Controllers
             }
 
             var (newAccessToken, newRefreshToken) = result.Data;
-
+            
             Response.Cookies.Append("accessToken", newAccessToken, new CookieOptions
             {
                 HttpOnly = true,
