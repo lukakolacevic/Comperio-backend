@@ -9,6 +9,7 @@ using dotInstrukcijeBackend.ServiceResultUtility;
 using dotInstrukcijeBackend.Services;
 using dotInstrukcijeBackend.ViewModels;
 using Google.Apis.Auth;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +17,7 @@ using NuGet.Common;
 using NuGet.Versioning;
 using SendGrid.Helpers.Mail.Model;
 using System.Data;
+using System.Security.Claims;
 
 namespace dotInstrukcijeBackend.Controllers
 {
@@ -285,6 +287,26 @@ namespace dotInstrukcijeBackend.Controllers
             {
                 return Unauthorized(new { success = false, message = "Invalid Google token." });
             }
+        }
+
+        [Authorize] // Ensure only authenticated users can access this
+        [HttpGet("current-user")]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var userId = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
+            Console.WriteLine(userId);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { success = false, message = "User not authenticated." });
+            }
+
+            var user = await _userService.FindUserByIdAsync(int.Parse(userId));
+            if (user == null)
+            {
+                return NotFound(new { success = false, message = "User not found." });
+            }
+
+            return Ok(new { success = true, user = user });
         }
 
     }
