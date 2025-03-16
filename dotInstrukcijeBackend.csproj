@@ -9,10 +9,6 @@
   <ItemGroup>
     <Compile Remove="HelperFunctions\MapToProfessorDTO.cs" />
     <Compile Remove="Interfaces\AppDatabaseContext.cs" />
-    <Compile Remove="Interfaces\Udeletethis\IUser.cs" />
-    <Compile Remove="Migrations\20240320195514_InitialCreate.cs" />
-    <Compile Remove="Migrations\20240320195514_InitialCreate.Designer.cs" />
-    <Compile Remove="Migrations\AppDatabaseContextModelSnapshot.cs" />
     <Compile Remove="Models\Professor.cs" />
     <Compile Remove="Models\Student.cs" />
   </ItemGroup>
@@ -39,8 +35,6 @@
 
   <ItemGroup>
     <Folder Include="HelperFunctions\" />
-    <Folder Include="Interfaces\Udeletethis\" />
-    <Folder Include="Migrations\" />
   </ItemGroup>
 
 </Project>
